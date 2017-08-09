@@ -1,0 +1,23 @@
+%%-*- mode: erlang -*-
+{application, bidder, [
+	{description, ""},
+	{vsn, "0.1.0"},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib,
+		crypto,
+		lager,
+		compiler,
+		syntax_tools,
+		goldrush,
+		sasl,
+		statsderl,
+		bertconf,
+		shotgun,
+		cache
+	]},
+	{included_applications, [pooler]},
+	{mod, {bidder_app, []}},
+	{env, []}
+]}.
