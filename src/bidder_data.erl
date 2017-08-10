@@ -83,6 +83,7 @@ mark_win(WinBin) ->
 	Data = Bid#{
 		<<"crid">> => Crid,
 		<<"win_price">> => trunc(WinPrice),
+		<<"imps">> => 0,
 		<<"clicks">> => 0
  	}, tk_lib:echo1(bid_win, Data),
 	Data2 = jsx:encode(Data),
