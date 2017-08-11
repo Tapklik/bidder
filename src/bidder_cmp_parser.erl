@@ -97,7 +97,7 @@ find_or_invalid(Path, Map) when is_list(Path) == false ->
 	find_or_invalid([Path], Map);
 find_or_invalid(Path, Map) ->
 	case tk_maps:get(Path, Map) of
-		{error, _E} ->invalid;
+		{error, _E} -> invalid;
 		Value -> Value
 	end.
 
@@ -122,9 +122,9 @@ find_all([{_Key, Path} | T], Map, Acc) ->
 	end.
 
 get_hourofweek_plan(Path, Map) ->
-	Plan = <<"0111111 0111111 0111111 0111111 0111111 0111111 0111111">>,
-			HowMatrix = ets:tab2list(hourofweek_matrix),
-			get_hourofweek_plan2(Plan, HowMatrix).
+	Plan = tk_maps:get(Path, Map),
+	HowMatrix = ets:tab2list(hourofweek_matrix),
+	get_hourofweek_plan2(Plan, HowMatrix).
 
 get_hourofweek_plan2(Plan, Matrix) ->
 	get_hourofweek_plan2(Plan, Matrix, 0, 1, []).
@@ -171,7 +171,7 @@ cmp_parser_filters() ->
 		{<<"exchange">>, find_or_invalid, [<<"exchange">>, <<"data">>]},
 		{<<"bid">>, find_or_invalid, [<<"bid">>]},
 		{<<"adomain">>, find_or_invalid, [<<"adomain">>]},
-		{<<"device">>, find_or_invalid, [<<"device">>,<<"data">>]},
+		{<<"device">>, find_or_invalid, [<<"device">>, <<"data">>]},
 		{<<"user">>, find_or_invalid, [<<"user">>, <<"data">>]},
 		{<<"budget">>, parse_filters, cmp_parser_budget},
 		{<<"cat">>, find_or_invalid, [<<"cat">>, <<"data">>]},

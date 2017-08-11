@@ -141,7 +141,7 @@ filter_internal([{P1, {Fun, Default}, P2} | T], FilterConfig, Map, _Result) ->
 %%		not defined		not	defined		pass
 %%
 -spec include({map_path(), map()}, {map_path(), map()}, filter_action()) -> filter_action().
-include({P1, FilterConfig}, {P2, BR}, Default) -> tk_lib:echo1({P1, FilterConfig}, {P2, BR}),
+include({P1, FilterConfig}, {P2, BR}, Default) ->
 	%% V1 comes from campaigns
 	V1 = lookup(P1, FilterConfig),
 	%% V2 comes from bid request
