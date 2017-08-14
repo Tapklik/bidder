@@ -40,7 +40,8 @@ filter_bid(CmpTid, BR) ->
 			select_creative(CmpTid, BR, pass);
 		_ ->
 			%% Filtering is enabled:
-			F1 = filter_bid_1(CmpTid, BR),
+			R = check_pacing_rate(CmpTid),
+			F1 = filter_bid_1(CmpTid, BR, R),
 			select_creative(CmpTid, BR, F1)
 	end.
 
@@ -48,8 +49,19 @@ filter_bid(CmpTid, BR) ->
 %%%    PRIVATE     %%%
 %%%%%%%%%%%%%%%%%%%%%%
 
--spec filter_bid_1(tid(), br()) -> pass | fail.
-filter_bid_1(CmpTid, BR) ->
+check_pacing_rate(CmpTid) ->
+	case bidder_cmp:dirty_read_cmp(CmpTid, <<"pacing_rate">>) of
+		{<<"pacing_rate">>, Rate} ->
+			Rate >= rand:uniform();
+		_ ->
+			%% cmp config not found
+			{fail, config_not_found}
+	end.
+
+-spec filter_bid_1(tid(), br(), boolean()) -> pass | fail.
+filter_bid_1(_, _, false) ->
+	{fail, pacing_rate};
+filter_bid_1(CmpTid, BR, true) ->
 	case bidder_cmp:dirty_read_cmp(CmpTid, <<"filters">>) of
 		{<<"filters">>, Filters} ->
 			filter_internal(filters_1(), Filters, BR);

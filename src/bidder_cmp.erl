@@ -12,6 +12,8 @@
 -export([update_cmp/1, delete_cmp/1, read_cmp/1, dirty_read_cmp/2, get_cmp_stats/1]).
 -export([get_all_cmps/0, get_and_reset_all_cmps_stats/0]).
 
+-export([set_pacing_rate/1]).
+
 -export([save_bert_file/1]).
 -export([try_ets_lookup/2]).
 
@@ -140,6 +142,19 @@ get_and_reset_all_cmps_stats() ->
 		<<"stats">> => Stats
 	}.
 
+set_pacing_rate(PacingJson) ->
+	Pacing = jsx:decode(PacingJson, [return_maps]),
+	#{
+		<<"cmp">> := Cmp,
+		<<"pacing_rate">> := Rate
+	} = Pacing,
+	case check_cmp(Cmp) of
+		<<"not_found">> ->
+			ok;
+		{_Cmp, Pid, _Tid, _Rate} ->
+			gen_server:call(Pid, {set_pacing_rate, Rate})
+	end.
+
 save_bert_file(FileBin) ->
 	[{Filename1, _Content} | _] = binary_to_term(FileBin),
 	Filename2 = atom_to_list(Filename1),
@@ -255,6 +270,11 @@ handle_call({get_and_reset_stats}, _From, State) ->
 	ets:insert(Tid, {<<"impressions">>, 0}),
 	ets:insert(Tid, {<<"clicks">>, 0}),
 	{reply, {ok, Resp}, State2};
+
+handle_call({set_pacing_rate, Rate}, _From, State) ->
+	Tid = State#state.tid,
+	ets:insert(Tid, {<<"pacing_rate">>, Rate}),
+	{reply, ok, State};
 
 handle_call(_Request, _From, State) ->
 	{reply, ok, State}.

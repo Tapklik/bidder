@@ -85,7 +85,7 @@ mark_win(WinBin) ->
 		<<"win_price">> => trunc(WinPrice),
 		<<"imps">> => 1,
 		<<"clicks">> => 0
- 	}, tk_lib:echo1(bid_win, Data),
+ 	},
 	Data2 = jsx:encode(Data),
 	cache:put(wins_cache, BidId, Data),
 	Topic  = <<"wins">>,
@@ -99,15 +99,19 @@ mark_click(ClickBin) ->
 		<<"cmp">> := _Cmp,                	% campaign id
 		<<"crid">> := Crid              	% creative id
 	} = ClickMap,
-	Bid = cache:get(wins_cache, BidId),
-	Clicks = tk_maps:get([<<"clicks">>], Bid),
-	Data = Bid#{
-		<<"crid">> => Crid,
-		<<"clicks">> => Clicks + 1
-	}, tk_lib:echo1(click_win, Data),
-	Data2 = jsx:encode(Data),
-	Topic  = <<"wins">>,
-	publish_to_kafka(Topic, Data2).
+	case cache:get(wins_cache, BidId) of
+		undefined ->
+			ok;
+		Bid ->
+			Clicks = tk_maps:get([<<"clicks">>], Bid),
+			Data = Bid#{
+				<<"crid">> => Crid,
+				<<"clicks">> => Clicks + 1
+			},
+			Data2 = jsx:encode(Data),
+			Topic  = <<"wins">>,
+			publish_to_kafka(Topic, Data2)
+	end.
 
 publish_to_kafka(Topic, Load) ->
 	Client = c1,
