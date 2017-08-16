@@ -31,7 +31,7 @@
 		name = cmp_config,
 		exchange = <<"campaigns">>,
 		topic = <<"config.general">>,
-		func = fun(P) -> bidder_cmp:load_config(P) end,
+		func = fun(P) -> bidder_cmp:load_cmp_config(P) end,
 		pool_size = 5},
 	#subscriber{
 		name = cmp_pacing,

@@ -6,10 +6,13 @@
 -include("lager.hrl").
 -include_lib("../lib/amqp_client/include/amqp_client.hrl").
 
--export([start_link/0, start_link/1]).
+-export([start_link/0, start_link/3]).
 
--export([load_config/1]).
--export([update_cmp/1, delete_cmp/1, read_cmp/1, dirty_read_cmp/2, get_cmp_stats/1]).
+-export([load_cmp_config/1, dirty_read_cmp/2]).
+-export([start_cmp/3, stop_cmp/1, check_cmp/1]).
+
+
+-export([get_cmp_stats/1]).
 -export([get_all_cmps/0, get_and_reset_all_cmps_stats/0]).
 
 -export([set_pacing_rate/1]).
@@ -24,7 +27,7 @@
 	cmp,
 	tid,
 	timestamp,
-	status = <<"started">>,
+	hash,
 	bids = 0,
 	imps = 0,
 	clicks = 0
@@ -48,71 +51,62 @@
 %%
 start_link() ->
 	gen_server:start_link(?MODULE, [], []).
-start_link(Cmp) ->
-	gen_server:start_link(?MODULE, [Cmp], []).
+start_link(Cmp, CmpConfig, CmpHash) ->
+	gen_server:start_link(?MODULE, [Cmp, CmpConfig, CmpHash], []).
 
 
-load_config(ConfigJson) ->
-	ConfigMap = jsx:decode(ConfigJson, [return_maps]),
-	Config = tk_maps:get([<<"data">>], ConfigMap),
-	Result = lists:map(
-		fun(CmpConfig) ->
-			Cmp = tk_maps:get([<<"id">>], CmpConfig),
-			case update_cmp(CmpConfig) of
-				error ->
-					#{
-						<<"cmp">> => Cmp,
-						<<"status">> => <<"error">>
-					};
-				ok ->
-					#{
-						<<"cmp">> => Cmp,
-						<<"status">> => <<"started">>
-					}
+load_cmp_config(ConfigJson) ->
+	#{
+		<<"cmp">> := Cmp,
+		<<"hash">> := Hash,
+		<<"config">> := CmpConfig
+	} = jsx:decode(ConfigJson, [return_maps]),
+	case try_ets_lookup(cmp_list, Cmp) of
+		not_found ->
+			{ok, _} = start_cmp(Cmp, CmpConfig, Hash);
+		{_Cmp, Pid, _Tid, _Rate} ->
+			case gen_server:call(Pid, {get_cmp_hash}) of
+				{ok, Hash} ->
+					gen_server:cast(Pid, {reset_timeout});
+				_ ->
+					stop_cmp(Cmp),
+					{ok, _} = start_cmp(Cmp, CmpConfig, Hash)
 			end
-		end
-		, Config),
-	?INFO("BIDDER_CMP: Campaign configuration loaded: ~p ", [jsx:encode(Result)]),
-	{ok, Result}.
+	end,
+	{ok, loaded}.
 
-update_cmp(CmpConfig) ->
-	Cmp = tk_maps:get([<<"id">>], CmpConfig),
-	CmpPid = case check_cmp(Cmp) of
-				 <<"not_found">> ->
-					 {ok, Pid} = supervisor:start_child(bidder_cmp_sup, [Cmp]),
-					 Pid;
-				 {_Cmp, Pid, _Tid, _Rate} -> Pid
-			 end,
-	gen_server:call(CmpPid, {write, CmpConfig}).
-
-delete_cmp(Cmp) ->
-	case check_cmp(Cmp) of
-		<<"not_found">> ->
-			{ok, #{
-				<<"cmp">> => Cmp,
-				<<"status">> => <<"not_found">>
-			}};
-		{_Cmp, Pid, _Tid, _Rate} ->
-			ok = supervisor:terminate_child(bidder_cmp_sup, Pid),
-			{ok, #{
-				<<"cmp">> => Cmp,
-				<<"status">> => <<"stopped">>
-			}}
+start_cmp(Cmp, CmpConfig, CmpHash) ->
+	case try_ets_lookup(cmp_list, Cmp) of
+		not_found ->
+			{ok, _} = supervisor:start_child(bidder_cmp_sup, [Cmp, CmpConfig, CmpHash]),
+			timer:sleep(10),
+			check_cmp(Cmp);
+		{_, Pid, _, _} ->
+			gen_server:cast(Pid, {reset_timeout}),
+			{ok, already_started}
 	end.
 
-read_cmp(Cmp) ->
-	case check_cmp(Cmp) of
-		<<"not_found">> ->
-			{ok, #{
-				<<"cmp">> => Cmp,
-				<<"status">> => <<"not_found">>
-			}};
-		{_Cmp, Pid, _Tid, _Rate} ->
-			gen_server:call(Pid, {read})
-	end.
 
 dirty_read_cmp(CmpTid, Key) ->
-	try_ets_lookup(CmpTid, Key, <<"not_found">>).
+	try_ets_lookup(CmpTid, Key, not_found).
+
+stop_cmp(Cmp) ->
+	case try_ets_lookup(cmp_list, Cmp) of
+		not_found ->
+			{error, not_found};
+		{_, Pid, _, _} ->
+			gen_server:cast(Pid, {stop_normal}),
+			timer:sleep(10),
+			check_cmp(Cmp)
+	end.
+
+check_cmp(Cmp) ->
+	case try_ets_lookup(cmp_list, Cmp) of
+		not_found ->
+			{ok, not_found};
+		_ ->
+			{ok, running}
+	end.
 
 get_cmp_stats(Cmp) ->
 	case check_cmp(Cmp) of
@@ -176,10 +170,24 @@ save_bert_file(FileBin) ->
 %%
 %% 	PS: this is a blocking init process because we need process started before updating Cmp
 %%
-init([Cmp]) ->
+init([Cmp, CmpConfig, CmpHash]) ->
 	process_flag(trap_exit, true),
 	Tid = ets:new(cmp, [public, set]),
 	%% Insert initial counts for cmp stats
+	#{
+		<<"filters">> := Filters,
+		<<"creatives">> := Creatives,
+		<<"status">> := Status,
+		<<"id">> := Cid
+	} = CmpConfig,
+	ets:insert(Tid, [
+		{<<"filters">>, Filters},
+		{<<"creatives">>, Creatives},
+		{<<"status">>, Status},
+		{<<"cid">>, Cid},
+		{<<"hash">>, CmpHash},
+		{<<"pacing_rate">>, 1.0}
+	]),
 	ets:insert(Tid, [
 		{<<"bids">>, 0},
 		{<<"impressions">>, 0},
@@ -191,46 +199,12 @@ init([Cmp]) ->
 		cmp = Cmp,
 		tid = Tid,
 		timestamp = erlang:timestamp(),
-		status = <<"active">>
+		hash = CmpHash
 	},
 	?INFO("BIDDER_CMP: Campaign ID [~p] initiated on node ~p", [Cmp, node()]),
 	erlang:send_after(?CMP_TIMEOUT_MS, self(), {timeout}),
 	{ok, State}.
 
-%%
-%% @private
-%% Sync call {write, config} is initiated from outside to start/update the Cmp configuration.
-%%
-handle_call({write, Config}, _From, State) ->
-	Cmp = State#state.cmp,
-	Tid = State#state.tid,
-	TimeStamp = erlang:timestamp(),
-	%% parse the cmp config coming from front-end
-	case bidder_cmp_parser:parse_cmp(Config) of
-		invalid_cmp ->
-			?ERROR("BIDDER_CMP: Campaign ID [~p] is invalid and is stopped on node ~p", [Cmp, node()]),
-			erlang:send_after(100, self(), {stop}),
-			{reply, error, State};
-		ParsedCmp ->
-			ets:insert(Tid, ParsedCmp),
-			?INFO("BIDDER_CMP: Campaign ID [~p] updated on node ~p", [Cmp, node()]),
-			{reply, ok, State#state{timestamp = TimeStamp}}
-	end;
-
-%%
-%% Sync call {read} returns information from Cmp ETS about the Cmp in a map
-%%
-handle_call({read}, _From, State) ->
-	Tid = State#state.tid,
-	TimeStamp = State#state.timestamp,
-	ConfigList = ets:tab2list(Tid),
-	Resp = lists:foldl(
-		fun({K, V}, Acc) ->
-			Acc#{K => V}
-		end
-		, #{}, ConfigList),
-	Resp2 = Resp#{<<"timestamp">> => list_to_binary(tk_lib:iso_timestamp(TimeStamp))},
-	{reply, {ok, Resp2}, State};
 
 %%
 %% Retrieve counts for previous t, to return them as resp
@@ -271,6 +245,10 @@ handle_call({get_and_reset_stats}, _From, State) ->
 	ets:insert(Tid, {<<"clicks">>, 0}),
 	{reply, {ok, Resp}, State2};
 
+handle_call({get_cmp_hash}, _From, State) ->
+	Hash = State#state.hash,
+	{reply, {ok, Hash}, State};
+
 handle_call({set_pacing_rate, Rate}, _From, State) ->
 	Tid = State#state.tid,
 	ets:insert(Tid, {<<"pacing_rate">>, Rate}),
@@ -279,6 +257,8 @@ handle_call({set_pacing_rate, Rate}, _From, State) ->
 handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
 
+handle_cast({reset_timeout}, State) ->
+	{noreply, State#state{timestamp = erlang:timestamp()}};
 handle_cast(_Request, State) ->
 	{noreply, State}.
 
@@ -329,13 +309,10 @@ code_change(_OldVsn, State, _Extra) ->
 %%%    INTERNAL    %%%
 %%%%%%%%%%%%%%%%%%%%%%
 
-%% @hidden
-check_cmp(Cmp) ->
-	try_ets_lookup(cmp_list, Cmp, <<"not_found">>).
 
 %% @hidden
 try_ets_lookup(Table, Key) ->
-	try_ets_lookup(Table, Key, <<"">>).
+	try_ets_lookup(Table, Key, not_found).
 try_ets_lookup(Table, Key, Default) ->
 	case ets:lookup(Table, Key) of
 		[Val | _] -> Val;
