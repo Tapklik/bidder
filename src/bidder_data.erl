@@ -38,11 +38,12 @@ start_link() ->
 save_bid(TimeStamp, BidId, BR, RSP) ->
 	SaveBid = ?BIDS_SAVE_PCTG >= rand:uniform(),
 	BRjson = jsx:encode(BR),
-	{Cmp, Crid, BidPrice} = check_rsp_output(RSP),
+	{AccId, Cmp, Crid, BidPrice} = check_rsp_output(RSP),
 	%{ok, {TimeStamp, Tid}} = get_current_tid(),
 	Data = #{
 		<<"timestamp">> => TimeStamp,	% time stamp (5 mins)
 		<<"bid_id">> => BidId,          % id
+		<<"acc">> => AccId,            	% account id
 		<<"cmp">> => Cmp,            	% campaign id
 		<<"br">> => BR,         		% br
 		<<"rsp">> => RSP,           	% creative id
@@ -239,10 +240,11 @@ store_data_internal(Data) ->
 	end.
 
 check_rsp_output(RSP) ->
+	AccId = tk_maps:get([<<"acc">>], RSP),
 	Cmp = tk_maps:get([<<"cid">>], RSP),
 	Crid = tk_maps:get([<<"creative">>, <<"crid">>], RSP),
 	BidPrice = tk_maps:get([<<"price">>], RSP),
-	{Cmp, Crid, BidPrice}.
+	{AccId, Cmp, Crid, BidPrice}.
 
 get_current_ts() ->
 	TsLength = ?ENV(ts_length, 300),

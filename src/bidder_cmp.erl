@@ -64,7 +64,7 @@ load_cmp_config(ConfigJson) ->
 	case try_ets_lookup(cmp_list, Cmp) of
 		not_found ->
 			{ok, _} = start_cmp(Cmp, CmpConfig, Hash);
-		{_Cmp, Pid, _Tid, _Rate} ->
+		{_, _, Pid, _, _} ->
 			case gen_server:call(Pid, {get_cmp_hash}) of
 				{ok, Hash} ->
 					gen_server:cast(Pid, {reset_timeout});
@@ -81,7 +81,7 @@ start_cmp(Cmp, CmpConfig, CmpHash) ->
 			{ok, _} = supervisor:start_child(bidder_cmp_sup, [Cmp, CmpConfig, CmpHash]),
 			timer:sleep(10),
 			check_cmp(Cmp);
-		{_, Pid, _, _} ->
+		{_, _, Pid, _, _} ->
 			gen_server:cast(Pid, {reset_timeout}),
 			{ok, already_started}
 	end.
@@ -94,7 +94,7 @@ stop_cmp(Cmp) ->
 	case try_ets_lookup(cmp_list, Cmp) of
 		not_found ->
 			{error, not_found};
-		{_, Pid, _, _} ->
+		{_, _, Pid, _, _} ->
 			gen_server:cast(Pid, {stop_normal}),
 			timer:sleep(10),
 			check_cmp(Cmp)
@@ -115,15 +115,15 @@ get_cmp_stats(Cmp) ->
 				<<"cmp">> => Cmp,
 				<<"status">> => <<"not_found">>
 			}};
-		{_Cmp, Pid, _Tid, _Rate} ->
+		{_, _, Pid, _, _} ->
 			gen_server:call(Pid, {get_stats})
 	end.
 
 get_all_cmps() ->
-	[Cmp || {Cmp, _, _, _} <- ets:tab2list(cmp_list)].
+	[Cmp || {_, Cmp, _, _, _} <- ets:tab2list(cmp_list)].
 
 get_and_reset_all_cmps_stats() ->
-	CmpPids = [Pid || {_, Pid, _, _} <- ets:tab2list(cmp_list)],
+	CmpPids = [Pid || {_, _, Pid, _, _} <- ets:tab2list(cmp_list)],
 	Stats = lists:map(
 		fun(P) ->
 			{ok, Stats} = gen_server:call(P, {get_and_reset_stats}),
@@ -178,12 +178,14 @@ init([Cmp, CmpConfig, CmpHash]) ->
 		<<"filters">> := Filters,
 		<<"creatives">> := Creatives,
 		<<"status">> := Status,
-		<<"id">> := Cid
+		<<"id">> := Cid,
+		<<"acc">> := AccId
 	} = CmpConfig,
 	ets:insert(Tid, [
 		{<<"filters">>, Filters},
 		{<<"creatives">>, Creatives},
 		{<<"status">>, Status},
+		{<<"acc">>, AccId},
 		{<<"cid">>, Cid},
 		{<<"hash">>, CmpHash},
 		{<<"pacing_rate">>, 1.0}
@@ -194,7 +196,7 @@ init([Cmp, CmpConfig, CmpHash]) ->
 		{<<"clicks">>, 0}
 	]),
 	%% Global cmp list that holds all the running campaigns
-	ets:insert(cmp_list, {Cmp, self(), Tid, 1.0}),
+	ets:insert(cmp_list, {AccId, Cmp, self(), Tid, 1.0}),
 	State = #state{
 		cmp = Cmp,
 		tid = Tid,

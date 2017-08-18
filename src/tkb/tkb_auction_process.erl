@@ -98,7 +98,6 @@ loop(Parent, Debug, State) ->
 					%% Save bid in temp table waiting for win notification
 					bidder_data:save_bid(TimeStamp, BidId, BR, RSP2)
 			end,
-			BidId = State#state.bid_id,
 			?DEBUG("BID (ID: ~p) -> AUCTION: Submitted winning bid: ~p", [BidId, RSP]),
 			Parent ! {auction_rsp, BidId, RSP}
 	end.

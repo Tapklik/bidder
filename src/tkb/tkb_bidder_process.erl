@@ -2,18 +2,19 @@
 
 %-include("bidder_global.hrl").
 
--export([process_bid/7]).
+-export([process_bid/8]).
 
 
 %%%%%%%%%%%%%%%%%%%%%%
 %%%    API CALLS   %%%
 %%%%%%%%%%%%%%%%%%%%%%
 
-process_bid(Cmp, BR, BidId, CmpTid, AuctionPid, TimeStamp, DebugBid) ->
+process_bid(AccId, Cmp, BR, BidId, CmpTid, AuctionPid, TimeStamp, DebugBid) ->
 	RSPmap = #{
 		<<"price">> => rand:uniform(100)/10,
 		<<"weight">> => 1,
 		<<"cid">> => Cmp,
+		<<"acc">> => AccId,
 		<<"id">> => tk_maps:get([<<"id">>], BR)
 	},
 	erlang:send_after(40, self(), {done, AuctionPid, BR, Cmp, BidId, CmpTid, RSPmap}),
@@ -29,6 +30,7 @@ process_bid(Cmp, BR, BidId, CmpTid, AuctionPid, TimeStamp, DebugBid) ->
 					ets:update_counter(CmpTid, <<"bids">>, 1),
 					RSPmap2 = RSPmap#{<<"creative">> => Cr},
 					Crid = tk_maps:get([<<"crid">>], Cr),
+					AccId = tk_maps:get([<<"acc">>], RSPmap),
 					BidPrice = tk_maps:get([<<"price">>], RSPmap),
 					bidder_data:save_bidder_bid(TimeStamp, BidId, Cmp, Crid, BidPrice),
 					log_bid(BidId, [{<<"bid_cmp_", Cmp/binary>>, RSPmap2}], DebugBid),
