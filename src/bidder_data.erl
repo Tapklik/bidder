@@ -106,6 +106,8 @@ mark_click(ClickBin) ->
 		Bid ->
 			Clicks = tk_maps:get([<<"clicks">>], Bid),
 			Data = Bid#{
+				<<"imps">> => 0,
+				<<"win_price">> => 0,
 				<<"crid">> => Crid,
 				<<"clicks">> => Clicks + 1
 			},
