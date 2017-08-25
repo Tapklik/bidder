@@ -50,8 +50,9 @@ handle_info({{From, br, BidId, BR, TimeStamp, DebugBid}, Poolname}, State) ->
 	L = ets:match_object(cmp_list, '_'),
 	NumCmp = length(L),
 	NumPassCmp = ?ENV(campaigns_pass_num, 20),
-	SelectRatio = case NumPassCmp / NumCmp of %%TODO watch for dev/0
-					  X when X < 0.8 -> 1.0;
+	SelectRatio = case NumPassCmp / NumCmp of
+				      X when NumCmp == 0 -> 0;
+					  X when X < 0.8 orelse X >= 1.0 -> 1.0;
 					  X -> X
 				  end,
 	spawn_bidders(L, BR, BidId, AuctionPid, SelectRatio, TimeStamp, DebugBid),
