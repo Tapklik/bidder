@@ -95,7 +95,7 @@ spawn_bidders(L, BR, BidId, AuctionPid, SelectRatio, TimeStamp, DebugBid) ->
 	lists:foreach(
 		fun({AccId, Cmp, _Pid, CmpTid, Rate})->
 			case (Rate * SelectRatio) > rand:uniform() of
-				true ->
+				true -> tk_lib:echo1(Rate, SelectRatio),
 					proc_lib:spawn(tkb_bidder_process, process_bid, [AccId, Cmp, BR, BidId, CmpTid, AuctionPid, TimeStamp, DebugBid]);
 				false ->
 					ok
