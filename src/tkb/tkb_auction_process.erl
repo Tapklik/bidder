@@ -53,7 +53,7 @@ loop(Parent, Debug, State) ->
 			sys:handle_system_msg(
 				Request, From, Parent, ?MODULE, Debug, State
 			);
-		{bid, Cmp, BidId, Bid} ->
+		{bid, Cmp, BidId, Bid} -> tk_lib:echo1(Cmp, Bid),
 			CurrentCount = State#state.count,
 			CurrentBid = State#state.current_bid,
 			CurrentPrice = case CurrentBid of

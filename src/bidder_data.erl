@@ -11,7 +11,7 @@
 	get_current_tid/0,
 	save_bid/4,
 	save_bidder_bid/5,
-	mark_win/1, mark_click/1
+	mark_win/1, mark_click/1, publish_to_kafka/2
 ]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	terminate/2, code_change/3]).
