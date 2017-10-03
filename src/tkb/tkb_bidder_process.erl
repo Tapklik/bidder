@@ -17,6 +17,9 @@ process_bid(AccId, Cmp, BR, BidId, CmpTid, AuctionPid, TimeStamp, DebugBid) ->
 		<<"acc">> => AccId,
 		<<"id">> => tk_maps:get([<<"id">>], BR)
 	},
+	%% Updating CMP counters -----------------
+	ets:update_counter(CmpTid, <<"bid_requests">>, 1),
+	%% ---------------------------------------
 	erlang:send_after(40, self(), {done, AuctionPid, BR, Cmp, BidId, CmpTid, RSPmap}),
 	case tkb_bids_filter:filter_bid(CmpTid, BR) of
 		{fail, Reason} ->
@@ -27,7 +30,9 @@ process_bid(AccId, Cmp, BR, BidId, CmpTid, AuctionPid, TimeStamp, DebugBid) ->
 		{pass, Cr} ->
 			receive
 				{done, AuctionPid, BR, Cmp, BidId, CmpTid, RSPmap} ->
+					%% Updating CMP counters -----------------
 					ets:update_counter(CmpTid, <<"bids">>, 1),
+					%% ---------------------------------------
 					RSPmap2 = RSPmap#{<<"creative">> => Cr},
 					Crid = tk_maps:get([<<"crid">>], Cr),
 					AccId = tk_maps:get([<<"acc">>], RSPmap),

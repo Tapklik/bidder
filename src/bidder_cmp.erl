@@ -27,14 +27,11 @@
 	cmp,
 	tid,
 	timestamp,
-	hash,
-	bids = 0,
-	imps = 0,
-	clicks = 0
+	hash
 }).
 
 -define(CMP_TIMEOUT_MS, ?CMP_TIMEOUT * 1000).
-
+-define(INTERVAL, 5 * 1000).
 
 %%%%%%%%%%%%%%%%%%%%%%
 %%%    API CALLS   %%%
@@ -109,8 +106,8 @@ check_cmp(Cmp) ->
 	end.
 
 get_cmp_stats(Cmp) ->
-	case check_cmp(Cmp) of
-		<<"not_found">> ->
+	case try_ets_lookup(cmp_list, Cmp) of
+		not_found ->
 			{ok, #{
 				<<"cmp">> => Cmp,
 				<<"status">> => <<"not_found">>
@@ -120,7 +117,7 @@ get_cmp_stats(Cmp) ->
 	end.
 
 get_all_cmps() ->
-	[Cmp || {_, Cmp, _, _, _} <- ets:tab2list(cmp_list)].
+	[Cmp || {Cmp, _, _, _, _} <- ets:tab2list(cmp_list)].
 
 get_and_reset_all_cmps_stats() ->
 	CmpPids = [Pid || {_, _, Pid, _, _} <- ets:tab2list(cmp_list)],
@@ -142,10 +139,10 @@ set_pacing_rate(PacingJson) ->
 		<<"cmp">> := Cmp,
 		<<"pacing_rate">> := Rate
 	} = Pacing,
-	case check_cmp(Cmp) of
-		<<"not_found">> ->
+	case try_ets_lookup(cmp_list, Cmp) of
+		not_found ->
 			ok;
-		{_Cmp, Pid, _Tid, _Rate} ->
+		{_, _, Pid, _, _} ->
 			gen_server:call(Pid, {set_pacing_rate, Rate})
 	end.
 
@@ -191,12 +188,13 @@ init([Cmp, CmpConfig, CmpHash]) ->
 		{<<"pacing_rate">>, 1.0}
 	]),
 	ets:insert(Tid, [
+		{<<"bid_requests">>, 0},
 		{<<"bids">>, 0},
-		{<<"impressions">>, 0},
+		{<<"imps">>, 0},
 		{<<"clicks">>, 0}
 	]),
 	%% Global cmp list that holds all the running campaigns
-	ets:insert(cmp_list, {AccId, Cmp, self(), Tid, 1.0}),
+	ets:insert(cmp_list, {Cmp, AccId, self(), Tid, 1.0}),
 	State = #state{
 		cmp = Cmp,
 		tid = Tid,
@@ -205,6 +203,7 @@ init([Cmp, CmpConfig, CmpHash]) ->
 	},
 	?INFO("BIDDER_CMP: Campaign ID [~p] initiated on node ~p", [Cmp, node()]),
 	erlang:send_after(?CMP_TIMEOUT_MS, self(), {timeout}),
+	erlang:send_after(?INTERVAL, self(), {interval}),
 	{ok, State}.
 
 
@@ -212,40 +211,15 @@ init([Cmp, CmpConfig, CmpHash]) ->
 %% Retrieve counts for previous t, to return them as resp
 %%
 handle_call({get_stats}, _From, State) ->
+	Tid = State#state.tid,
 	Resp = #{
-		<<"bids">> => State#state.bids,
-		<<"impressions">> => State#state.imps,
-		<<"clicks">> => State#state.clicks
+		<<"bid_requests">> => try_ets_lookup_stats(Tid, <<"bid_requests">>),
+		<<"bids">> => try_ets_lookup_stats(Tid, <<"bids">>),
+		<<"imps">> => try_ets_lookup_stats(Tid, <<"imps">>),
+		<<"clicks">> => try_ets_lookup_stats(Tid, <<"clicks">>)
 	},
 	{reply, {ok, Resp}, State};
 
-%%
-%% Retrieve counts for previous t, to return them as resp.
-%% At the same time, reset the counters in ETS of that previous t and save the
-%% 	stats in State2
-%%
-handle_call({get_and_reset_stats}, _From, State) ->
-	Tid = State#state.tid,
-	Resp = #{
-		<<"cmp">> => State#state.cmp,
-		<<"bids">> => State#state.bids,
-		<<"impressions">> => State#state.imps,
-		<<"clicks">> => State#state.clicks
-	},
-	%% Store current counts from the ETS
-	[{_, Bids}] = ets:lookup(Tid, <<"bids">>),
-	[{_, Imps}] = ets:lookup(Tid, <<"impressions">>),
-	[{_, Clicks}] = ets:lookup(Tid, <<"clicks">>),
-	State2 = State#state{
-		bids = Bids,
-		imps = Imps,
-		clicks = Clicks
-	},
-	%% Reset all ETS counters
-	ets:insert(Tid, {<<"bids">>, 0}),
-	ets:insert(Tid, {<<"impressions">>, 0}),
-	ets:insert(Tid, {<<"clicks">>, 0}),
-	{reply, {ok, Resp}, State2};
 
 handle_call({get_cmp_hash}, _From, State) ->
 	Hash = State#state.hash,
@@ -284,8 +258,39 @@ handle_info({timeout}, State) ->
 			self() ! {stop}
 	end,
 	{noreply, State};
+
+%%
+%% Retrieve counts for previous t, to return them as resp.
+%% At the same time, reset the counters in ETS of that previous t and save the
+%% 	stats in State2
+%%
+handle_info({interval}, State) ->
+	Tid = State#state.tid,
+	Stats = #{
+		<<"bid_requests">> => try_ets_lookup_stats(Tid, <<"bid_requests">>),
+		<<"bids">> => try_ets_lookup_stats(Tid, <<"bids">>),
+		<<"imps">> => try_ets_lookup_stats(Tid, <<"imps">>),
+		<<"clicks">> => try_ets_lookup_stats(Tid, <<"clicks">>)
+	},
+	Cmp = State#state.cmp,
+	Node = node(),
+	PublishStats = #{
+		<<"cmp">> => Cmp,
+		<<"node">> => Node,
+		<<"stats">> => Stats
+	},
+	rmq:publish(stats, erlang:term_to_binary(PublishStats)),
+	%% Reset all ETS counters
+	ets:insert(Tid, {<<"bid_requests">>, 0}),
+	ets:insert(Tid, {<<"bids">>, 0}),
+	ets:insert(Tid, {<<"imps">>, 0}),
+	ets:insert(Tid, {<<"clicks">>, 0}),
+	erlang:send_after(?INTERVAL, self(), {interval}),
+	{noreply, State};
+
 handle_info({stop}, State) ->
 	{stop, shutdown, State};
+
 handle_info({'EXIT', _, _}, State) ->
 	{stop, shutdown, State}.
 
@@ -311,6 +316,13 @@ code_change(_OldVsn, State, _Extra) ->
 %%%    INTERNAL    %%%
 %%%%%%%%%%%%%%%%%%%%%%
 
+try_ets_lookup_stats(Table, StatKey) ->
+	try_ets_lookup_stats(Table, StatKey, 0).
+try_ets_lookup_stats(Table, StatKey, Default) ->
+	case ets:lookup(Table, StatKey) of
+		[{_, Val} | _] -> Val;
+		[] -> Default
+	end.
 
 %% @hidden
 try_ets_lookup(Table, Key) ->

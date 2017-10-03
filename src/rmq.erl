@@ -96,7 +96,7 @@ handle_cast({publish, Payload}, State) ->
 			?ERROR("RMQ: Error in publishing to RMQ server! ~n (Name: ~p. Channel: ~p. Exchange: ~p. Msg: ~p)",
 				[Name, Channel, Exchange, shorten_log_output(Payload)])
 	end,
-	% pooler:return_member(Name, self()),
+	pooler:return_member(Name, self()),
 	{noreply, State};
 handle_cast(_Msg, State) ->
 	{noreply, State}.

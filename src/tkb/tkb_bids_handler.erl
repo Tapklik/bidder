@@ -50,10 +50,10 @@ handle_info({{From, br, BidId, BR, TimeStamp, DebugBid}, Poolname}, State) ->
 	L = ets:match_object(cmp_list, '_'),
 	NumCmp = length(L),
 	NumPassCmp = ?ENV(campaigns_pass_num, 20),
-	SelectRatio = case NumPassCmp / NumCmp of
-				      X when NumCmp == 0 -> 0;
-					  X when X < 0.8 orelse X >= 1.0 -> 1.0;
-					  X -> X
+	SelectRatio = case NumCmp of
+					  0 -> 0;
+				      X when NumPassCmp / X >= 1.0 -> 1.0;
+					  X -> NumPassCmp / X
 				  end,
 	spawn_bidders(L, BR, BidId, AuctionPid, SelectRatio, TimeStamp, DebugBid),
 	{noreply, State#state{
@@ -93,9 +93,9 @@ code_change(_OldVsn, State, _Extra) ->
 
 spawn_bidders(L, BR, BidId, AuctionPid, SelectRatio, TimeStamp, DebugBid) ->
 	lists:foreach(
-		fun({AccId, Cmp, _Pid, CmpTid, Rate})->
+		fun({Cmp, AccId, _Pid, CmpTid, Rate})->
 			case (Rate * SelectRatio) > rand:uniform() of
-				true -> tk_lib:echo1(Rate, SelectRatio),
+				true ->
 					proc_lib:spawn(tkb_bidder_process, process_bid, [AccId, Cmp, BR, BidId, CmpTid, AuctionPid, TimeStamp, DebugBid]);
 				false ->
 					ok

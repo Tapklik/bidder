@@ -1,3 +1,4 @@
+
 %%%%%%%%%%%%%%%%%%%%%%
 %%%    GLOBAL	   %%%
 %%%%%%%%%%%%%%%%%%%%%%
@@ -18,7 +19,7 @@
 }).
 
 %% RABBITMQ PUBSUB SETTINGS
--define(RMQ_HOST, "de-c1-srv-01").
+-define(RMQ_HOST, os:getenv("RMQ_HOST", "de-c1-srv-01")).
 -define(RMQ_PORT, 5672).
 -define(RMQ_USER, <<"tapklik">>).
 -define(RMQ_PASSWORD, <<"tapKlik7-rabbitmq">>).
@@ -60,10 +61,10 @@
 ]).
 -define(RMQ_PUBLISHERS, [
 	#publisher{
-		name = cmp_stats,
-		exchange = <<"campaigns">>,
+		name = stats,
+		exchange = <<"stats">>,
 		topic = <<"stats.bidders">>,
-		pool_size = 5},
+		pool_size = 20},
 	#publisher{
 		name = bids_debug,
 		exchange = <<"bids">>,

@@ -76,10 +76,16 @@ mark_win(WinBin) ->
 	#{
 		<<"timestamp">> := _TimeStamp,    	% time stamp (5 mins)
 		<<"bid_id">> := BidId,          	% id
-		<<"cmp">> := _Cmp,                	% campaign id
+		<<"cmp">> := Cmp,                	% campaign id
 		<<"crid">> := Crid,                	% creative id
 		<<"win_price">> := WinPrice    	 	% win price
 	} = WinMap,
+	%% Updating CMP counters -----------------
+	case ets:lookup(cmp_list, Cmp) of
+		[] -> ok;
+		[{_, _, _, CmpTid, _} |_] -> ets:update_counter(CmpTid, <<"imps">>, 1)
+	end,
+	%% ---------------------------------------
 	Bid = cache:get(bids_cache, BidId),
 	Data = Bid#{
 		<<"crid">> => Crid,
@@ -97,9 +103,15 @@ mark_click(ClickBin) ->
 	#{
 		<<"timestamp">> := _TimeStamp,    	% time stamp (5 mins)
 		<<"bid_id">> := BidId,          	% id
-		<<"cmp">> := _Cmp,                	% campaign id
+		<<"cmp">> := Cmp,                	% campaign id
 		<<"crid">> := Crid              	% creative id
 	} = ClickMap,
+	%% Updating CMP counters -----------------
+	case ets:lookup(cmp_list, Cmp) of
+		[] -> ok;
+		[{_, _, _, CmpTid, _} |_] -> ets:update_counter(CmpTid, <<"clicks">>, 1)
+	end,
+	%% ---------------------------------------
 	case cache:get(wins_cache, BidId) of
 		undefined ->
 			ok;
