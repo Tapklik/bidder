@@ -51,8 +51,8 @@ handle_info({{From, br, BidId, BR, TimeStamp, DebugBid}, Poolname}, State) ->
 	NumCmp = length(L),
 	NumPassCmp = ?ENV(campaigns_pass_num, 20),
 	SelectRatio = case NumCmp of
-					  0 -> 0;
-				      X when NumPassCmp / X >= 1.0 -> 1.0;
+				      0 -> 0;
+					  X when NumPassCmp / X >= 1.0 -> 1.0;
 					  X -> NumPassCmp / X
 				  end,
 	spawn_bidders(L, BR, BidId, AuctionPid, SelectRatio, TimeStamp, DebugBid),
