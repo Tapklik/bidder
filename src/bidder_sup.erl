@@ -64,7 +64,6 @@ init([]) ->
 		type => worker,
 		modules => [bidder_data]
 	},
-	%% TODO Not started
 	BidderStats = #{
 		id => bidder_stats,
 		start => {bidder_stats, start_link, []},
@@ -81,7 +80,7 @@ init([]) ->
 		type => worker,
 		modules => [vm]
 	},
-	Children = [CmpSup, BidderSup, RmqSup, Pooler, VMServer],
+	Children = [CmpSup, BidderSup, RmqSup, Pooler, BidderStats, VMServer],
 	RestartStrategy = {one_for_one, 10, 300},
 	{ok, {RestartStrategy, Children}}.
 
