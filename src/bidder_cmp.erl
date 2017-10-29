@@ -27,10 +27,10 @@
 	cmp,
 	tid,
 	timestamp,
-	hash
+	hash,
+	pacing_timestamp
 }).
 
--define(CMP_TIMEOUT_MS, ?CMP_TIMEOUT * 1000).
 -define(INTERVAL, 5 * 1000).
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -64,7 +64,7 @@ load_cmp_config(ConfigJson) ->
 		{_, _, Pid, _, _} ->
 			case gen_server:call(Pid, {get_cmp_hash}) of
 				{ok, Hash} ->
-					gen_server:cast(Pid, {reset_timeout});
+					gen_server:call(Pid, {reset_timeout});
 				_ ->
 					stop_cmp(Cmp),
 					{ok, _} = start_cmp(Cmp, CmpConfig, Hash)
@@ -141,7 +141,7 @@ set_pacing_rate(PacingJson) ->
 	} = Pacing,
 	case try_ets_lookup(cmp_list, Cmp) of
 		not_found ->
-			ok;
+			{ok, not_fount};
 		{_, _, Pid, _, _} ->
 			gen_server:call(Pid, {set_pacing_rate, Rate})
 	end.
@@ -151,9 +151,11 @@ save_bert_file(FileBin) ->
 	Filename2 = atom_to_list(Filename1),
 	case file:write_file(?DATA_PATH ++ Filename2 ++ ".bert", FileBin) of
 		ok ->
-			?INFO("RMQ: File ~p is received and saved", [Filename2]);
+			?INFO("RMQ: File ~p is received and saved", [Filename2]),
+			{ok, saved};
 		{error, E} ->
-			?ERROR("RMQ: Error in receiving or saving file ~p. (Error: ~p) ", [Filename2, E])
+			?ERROR("RMQ: Error in receiving or saving file ~p. (Error: ~p) ", [Filename2, E]),
+			{error, E}
 	end.
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -202,7 +204,6 @@ init([Cmp, CmpConfig, CmpHash]) ->
 		hash = CmpHash
 	},
 	?INFO("BIDDER_CMP: Campaign ID [~p] initiated on node ~p", [Cmp, node()]),
-	erlang:send_after(?CMP_TIMEOUT_MS, self(), {timeout}),
 	erlang:send_after(?INTERVAL, self(), {interval}),
 	{ok, State}.
 
@@ -225,39 +226,26 @@ handle_call({get_cmp_hash}, _From, State) ->
 	Hash = State#state.hash,
 	{reply, {ok, Hash}, State};
 
+handle_call({reset_timeout}, _From, State) ->
+	{reply, {ok, ok}, State#state{timestamp = erlang:timestamp()}};
+
 handle_call({set_pacing_rate, Rate}, _From, State) ->
 	Tid = State#state.tid,
-	ets:insert(Tid, {<<"pacing_rate">>, Rate}),
-	{reply, ok, State};
+	Resp = case ets:insert(Tid, {<<"pacing_rate">>, Rate}) of
+			   true ->
+				   {ok, ok};
+			   _ ->
+				   {error, ets_insert_error}
+		   end,
+	{reply, Resp, State};
 
 handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
 
-handle_cast({reset_timeout}, State) ->
-	{noreply, State#state{timestamp = erlang:timestamp()}};
+
 handle_cast(_Request, State) ->
 	{noreply, State}.
 
-%%
-%% @private
-%% Messages that are covered through handle_info() include:
-%%
-%% 1) {timeout}: periodic check to see when was the last update received; if it
-%% 		is greater than the defined ?CMP_TIMEOUT the campaign is halted
-%%
-%% 2) {stop}: stops this gen_server through normal shutdown
-%%
-handle_info({timeout}, State) ->
-	T1 = State#state.timestamp,
-	T2 = erlang:timestamp(),
-	Tdiff = tk_lib:tdiff_seconds(T1, T2),
-	case Tdiff > ?CMP_TIMEOUT of
-		false ->
-			erlang:send_after(?CMP_TIMEOUT_MS, self(), {timeout});
-		true ->
-			self() ! {stop}
-	end,
-	{noreply, State};
 
 %%
 %% Retrieve counts for previous t, to return them as resp.
@@ -280,6 +268,19 @@ handle_info({interval}, State) ->
 		<<"stats">> => Stats
 	},
 	rmq:publish(stats, erlang:term_to_binary(PublishStats)),
+	%% check for timeout if didn't receive campaign update in CMP_TIMEOUT or
+	%%	didn't receive pacing rate update in CMP_PACING_RATE_TIMEOUR
+	T1 = State#state.timestamp,
+	T2 = erlang:timestamp(),
+	Tdiff = tk_lib:tdiff_seconds(T1, T2),
+	case Tdiff > ?CMP_TIMEOUT orelse Tdiff > ?CMP_PACING_RATE_TIMEOUT of
+		false ->
+			ok;
+		true ->
+			?WARN("BIDDER_CMP: Campaign didn't receive pacing_rate or campaign update (Cmp: ~p initiated on node ~p)",
+				[Cmp, node()]),
+			self() ! {stop}
+	end,
 	%% Reset all ETS counters
 	ets:insert(Tid, {<<"bid_requests">>, 0}),
 	ets:insert(Tid, {<<"bids">>, 0}),

@@ -15,7 +15,8 @@
 -record(state, {
 	channel,
 	subscriber,
-	publisher
+	publisher,
+	logging
 }).
 
 
@@ -90,19 +91,24 @@ handle_cast({publish, Payload}, State) ->
 		routing_key = Topic
 	}, #amqp_msg{payload = Payload}) of
 		ok ->
-			?INFO("RMQ: Published message successfully. ~n (Name: ~p. Channel: ~p. Exchange: ~p. Msg: ~p)",
-				[Name, Channel, Exchange, shorten_log_output(Payload)]);
+			case State#state.logging of
+				true ->
+					?INFO("RMQ: Published message successfully. ~n (Name: ~p. Channel: ~p. Exchange: ~p. Msg: ~p)",
+						[Name, Channel, Exchange, shorten_log_output(Payload)]);
+				_ ->
+					ok
+			end;
 		_ ->
 			?ERROR("RMQ: Error in publishing to RMQ server! ~n (Name: ~p. Channel: ~p. Exchange: ~p. Msg: ~p)",
 				[Name, Channel, Exchange, shorten_log_output(Payload)])
 	end,
-	pooler:return_member(Name, self()),
+	pooler:return_member(Name, self(), ok),
 	{noreply, State};
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
 handle_info({init, #subscriber{exchange = Exchange, topic = Topic,
-	name = Name} = Subscriber}, State) ->
+	name = Name, logging = Logging} = Subscriber}, State) ->
 	Channel = State#state.channel,
 	Queue = generate_queue_id(Name),
 	#'queue.declare_ok'{} = amqp_channel:call(Channel, #'queue.declare'{exclusive = false,
@@ -113,12 +119,12 @@ handle_info({init, #subscriber{exchange = Exchange, topic = Topic,
 		no_ack = true}, self()),
 	?INFO("RMQ: Started subscriber: ~p ~n (Channel: ~p. Exchange: ~p. Topic: ~p)",
 		[Name, Channel, Exchange, Topic]),
-	{noreply, State#state{subscriber = Subscriber}};
+	{noreply, State#state{subscriber = Subscriber, logging = Logging}};
 
-handle_info({init, #publisher{name= Name, exchange = Exchange, topic = Topic} = Publisher}, State) ->
+handle_info({init, #publisher{name= Name, exchange = Exchange, topic = Topic, logging = Logging} = Publisher}, State) ->
 	?INFO("RMQ: Started publisher: ~p ~n (Channel: ~p. Exchange: ~p. Topic: ~p)",
 		[Name, State#state.channel, Exchange, Topic]),
-		{noreply, State#state{publisher = Publisher}};
+	{noreply, State#state{publisher = Publisher, logging = Logging}};
 
 handle_info(stop, State) ->
 	{stop, normal, State};
@@ -133,9 +139,19 @@ handle_info(Msg, State) ->
 		{#'basic.deliver'{}, #amqp_msg{payload = Payload}} ->
 			#subscriber{name = Name, exchange = Exchange, func = Fun} = State#state.subscriber,
 			Channel = State#state.channel,
-			?INFO("RMQ: Received message! ~n (Name: ~p. Channel: ~p. Exchange: ~p. Msg: ~p)",
-				[Name, Channel, Exchange, shorten_log_output(Payload)]),
-			Fun(Payload)
+			case State#state.logging of
+				true ->
+					?INFO("RMQ: Received message! ~n (Name: ~p. Channel: ~p. Exchange: ~p. Msg: ~p)",
+						[Name, Channel, Exchange, shorten_log_output(Payload)]);
+				_ ->
+					ok
+			end,
+			case Fun(Payload) of
+				{ok, _} -> ok;
+				E ->
+					?ERROR("RMQ: Error in completing fun [~p] with error: ~p. ~n (Name: ~p. Channel: ~p. Exchange: ~p. Msg: ~p)",
+						[Fun, E, Name, Channel, Exchange, shorten_log_output(Payload)])
+			end
 	end,
 	{noreply, State}.
 

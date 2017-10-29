@@ -114,7 +114,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%
 vm_stats(State) ->
 	[Node, Host] = binary:split(atom_to_binary(node(), latin1), <<"@">>),
-	K = binary_to_list(binary:replace(Host, <<".">>, <<"_">>)) ++ "." ++ binary_to_list(Node) ++ ".",
+	K = "erlang." ++ binary_to_list(Node) ++ "__" ++ binary_to_list(binary:replace(Host, <<".">>, <<"_">>)) ++ ".",
 
 	%% Processes
 	statsderl:gauge([K, "vm.proc_count"], erlang:system_info(process_count), 1.00),

@@ -114,7 +114,7 @@ mark_click(ClickBin) ->
 	%% ---------------------------------------
 	case cache:get(wins_cache, BidId) of
 		undefined ->
-			ok;
+			{ok, bid_not_found};
 		Bid ->
 			Clicks = tk_maps:get([<<"clicks">>], Bid),
 			Data = Bid#{
@@ -136,9 +136,10 @@ publish_to_kafka(Topic, Load) ->
 				{ok, crypto:rand_uniform(0, PartitionsCount)}
 						   end,
 			%% TODO Watch for spawning a new function here only for Kafka pub
-			spawn(fun()-> brod:produce(Client, Topic, PartitionFun, <<"">>, Load) end);
+			spawn(fun()-> brod:produce(Client, Topic, PartitionFun, <<"">>, Load) end),
+			{ok, published};
 		_ ->
-			ok
+			{ok, kafka_disabled}
 	end.
 
 

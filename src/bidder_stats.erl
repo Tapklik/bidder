@@ -113,7 +113,7 @@ collect_and_publish_stats(Ts0) ->
 	},
 	StatsJson = jsx:encode(Stats),
 	?INFO("BIDDER_STATS: Bidder stats on node ~p (ts: ~p): ~p", [node(), Ts0, StatsJson]),
-	rmq:publish(cmp_stats, jsx:encode(Stats)).
+	rmq:publish(cmp_stats, erlang:term_to_binary(Stats)).
 
 get_current_ts() ->
 	{ok, TsLength} = application:get_env(ts_length),

@@ -8,14 +8,16 @@
 	exchange,
 	topic,
 	func,
-	pool_size
+	pool_size,
+	logging
 }).
 
 -record(publisher, {
 	name,
 	exchange,
 	topic,
-	pool_size
+	pool_size,
+	logging
 }).
 
 %% RABBITMQ PUBSUB SETTINGS
@@ -32,30 +34,35 @@
 		name = cmp_config,
 		exchange = <<"campaigns">>,
 		topic = <<"config.general">>,
+		logging = true,
 		func = fun(P) -> bidder_cmp:load_cmp_config(P) end,
-		pool_size = 5},
+		pool_size = 50},
 	#subscriber{
 		name = cmp_pacing,
 		exchange = <<"campaigns">>,
 		topic = <<"config.pacing">>,
+		logging = true,
 		func = fun(P) -> bidder_cmp:set_pacing_rate(P) end,
-		pool_size = 5},
+		pool_size = 50},
 	#subscriber{
 		name = config_bert,
 		exchange = <<"config">>,
 		topic = <<"bert">>,
+		logging = true,
 		func = fun(P) -> bidder_cmp:save_bert_file(P) end,
 		pool_size = 5},
 	#subscriber{
 		name = wins,
 		exchange = <<"wins">>,
 		topic = <<"wins.imps">>,
+		logging = true,
 		func = fun(P) -> bidder_data:mark_win(P) end,
 		pool_size = 10},
 	#subscriber{
 		name = clicks,
 		exchange = <<"wins">>,
 		topic = <<"wins.clicks">>,
+		logging = true,
 		func = fun(P) -> bidder_data:mark_click(P) end,
 		pool_size = 4}
 ]).
