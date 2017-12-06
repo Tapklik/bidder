@@ -53,7 +53,7 @@ loop(Parent, Debug, State) ->
 			sys:handle_system_msg(
 				Request, From, Parent, ?MODULE, Debug, State
 			);
-		{bid, Cmp, BidId, Bid} -> tk_lib:echo1(Cmp, Bid),
+		{bid, Cmp, BidId, Bid} ->
 			CurrentCount = State#state.count,
 			CurrentBid = State#state.current_bid,
 			CurrentPrice = case CurrentBid of
@@ -82,10 +82,6 @@ loop(Parent, Debug, State) ->
 				[BidId, NewPrice, Cmp, CurrentCount + 1, CurrentPrice]),
 			loop(Parent, Debug, NewState);
 		{auction_timeout} ->
-			case State#state.count > 18 of
-				true -> statsderl:increment("auction.bids.received.5", 1, ?STATS_P); %% STAT
-				_ -> statsderl:increment("auction.bids.received.1", 1, ?STATS_P) %% STAT
-			end,
 			RSP = State#state.current_bid,
 			BR = State#state.br,
 			Bids = State#state.bids,

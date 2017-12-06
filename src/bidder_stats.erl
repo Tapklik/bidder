@@ -102,7 +102,7 @@ collect_and_publish_stats(Ts0) ->
 	CmpPids = [Pid || {_, _, Pid, _, _} <- ets:tab2list(cmp_list)],
 	StatsList = lists:map(
 		fun(P) ->
-			{ok, Stats} = gen_server:call(P, {get_and_reset_stats}), tk_lib:echo1(stats, Stats),
+			{ok, Stats} = gen_server:call(P, {get_and_reset_stats}),
 			Stats
 		end
 		, CmpPids),

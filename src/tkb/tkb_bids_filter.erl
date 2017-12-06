@@ -239,7 +239,7 @@ lookup(Path, Map) ->
 filters_1() ->
 	[
 		{[<<"exchange">>], {include, fail}, [<<"exchange">>]},
-		{[<<"adomain">>], {exclude, pass}, [<<"adomain">>]},
+		{[<<"adomain">>], {exclude, pass}, [<<"badv">>]},
 		{[<<"device">>,<<"type">>], {include, pass}, [<<"device">>, <<"type">>]},
 		{[<<"user">>, <<"gender">>], {include, pass}, [<<"user">>, <<"gender">>]},
 		{[<<"budget">>, <<"hourofweek">>], {include, fail}, [<<"hourofweek">>]},

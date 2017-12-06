@@ -46,7 +46,7 @@ check_health() ->
 s_group_new(SGroup, Nodes) ->
 	s_group:new_s_group(SGroup, Nodes).
 
-s_group_delete(SGroup) -> tk_lib:echo1(hey,SGroup),
+s_group_delete(SGroup) ->
 	s_group:delete_s_group(SGroup).
 
 s_group_add_nodes(SGroup, Nodes) ->

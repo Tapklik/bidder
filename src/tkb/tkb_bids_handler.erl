@@ -55,7 +55,8 @@ handle_info({{From, br, BidId, BR, TimeStamp, DebugBid}, Poolname}, State) ->
 					  X when NumPassCmp / X >= 1.0 -> 1.0;
 					  X -> NumPassCmp / X
 				  end,
-	spawn_bidders(L, BR, BidId, AuctionPid, SelectRatio, TimeStamp, DebugBid),
+	ImpId = tk_maps:get([<<"imp">>, <<"impid">>], BR),
+	spawn_bidders(L, BR, BidId, ImpId, AuctionPid, SelectRatio, TimeStamp, DebugBid),
 	{noreply, State#state{
 		from = From,
 		pool_name = Poolname,
@@ -91,12 +92,12 @@ code_change(_OldVsn, State, _Extra) ->
 %%%    INTERNAL    %%%
 %%%%%%%%%%%%%%%%%%%%%%
 
-spawn_bidders(L, BR, BidId, AuctionPid, SelectRatio, TimeStamp, DebugBid) ->
+spawn_bidders(L, BR, BidId, ImpId, AuctionPid, SelectRatio, TimeStamp, DebugBid) ->
 	lists:foreach(
 		fun({Cmp, AccId, _Pid, CmpTid, Rate})->
 			case (Rate * SelectRatio) > rand:uniform() of
 				true ->
-					proc_lib:spawn(tkb_bidder_process, process_bid, [AccId, Cmp, BR, BidId, CmpTid, AuctionPid, TimeStamp, DebugBid]);
+					proc_lib:spawn(tkb_bidder_process, process_bid, [AccId, Cmp, BR, BidId, ImpId, CmpTid, AuctionPid, TimeStamp, DebugBid]);
 				false ->
 					ok
 			end

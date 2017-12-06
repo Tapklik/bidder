@@ -178,6 +178,7 @@ init([Cmp, CmpConfig, CmpHash]) ->
 		<<"creatives">> := Creatives,
 		<<"status">> := Status,
 		<<"id">> := Cid,
+		<<"config">> := Config,
 		<<"acc">> := AccId
 	} = CmpConfig,
 	ets:insert(Tid, [
@@ -186,6 +187,7 @@ init([Cmp, CmpConfig, CmpHash]) ->
 		{<<"status">>, Status},
 		{<<"acc">>, AccId},
 		{<<"cid">>, Cid},
+		{<<"config">>, Config},
 		{<<"hash">>, CmpHash},
 		{<<"pacing_rate">>, 1.0}
 	]),
