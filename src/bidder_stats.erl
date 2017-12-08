@@ -24,7 +24,7 @@
 	<<"bids.failed.cat">>,
 	<<"bids.failed.creative">>,
 	<<"bids.failed.device">>,
-	<<"bids.failed.">>,
+	<<"bids.failed.user">>,
 	<<"bids.failed.other">>
 ]).
 
@@ -91,6 +91,8 @@ internal_increment(failed_creative, CmpTid) ->
 	ets:update_counter(CmpTid, <<"bids.failed.creative">>, 1);
 internal_increment(failed_device, CmpTid) ->
 	ets:update_counter(CmpTid, <<"bids.failed.device">>, 1);
+internal_increment(failed_user, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids.failed.user">>, 1);
 internal_increment(failed_other, CmpTid) ->
 	ets:update_counter(CmpTid, <<"bids.failed.other">>, 1).
 

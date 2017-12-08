@@ -196,7 +196,6 @@ init([Cmp, CmpConfig, CmpHash]) ->
 		{<<"bids">>, 0},
 		{<<"imps">>, 0},
 		{<<"clicks">>, 0},
-		{<<"bids.success">>, 0},
 		{<<"bids.failed.budget">>, 0},
 		{<<"bids.failed.bidfloor">>, 0},
 		{<<"bids.failed.hourofweek">>, 0},
