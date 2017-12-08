@@ -1,124 +1,96 @@
 -module(bidder_stats).
 
--behaviour(gen_server).
-
 -include("bidder_global.hrl").
 -include("lager.hrl").
 -include_lib("../lib/amqp_client/include/amqp_client.hrl").
 
--export([start_link/0]).
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	terminate/2, code_change/3]).
+-export([increment/2, reset_stats/1, send_stats/1]).
+
 
 -record(state, {
 	ts = 0
 }).
 
 -define(INTERVAL, 2000).
+-define(METRICS, [
+	<<"bid_requests">>,
+	<<"bids">>,
+	<<"imps">>,
+	<<"clicks">>,
+	<<"bids.failed.budget">>,
+	<<"bids.failed.bidfloor">>,
+	<<"bids.failed.hourofweek">>,
+	<<"bids.failed.geo">>,
+	<<"bids.failed.cat">>,
+	<<"bids.failed.creative">>,
+	<<"bids.failed.device">>,
+	<<"bids.failed.">>,
+	<<"bids.failed.other">>
+]).
 
+-type bidder_stat() :: 	bid_request
+| bid
+| imp
+| click
+| failed_budget
+| failed_bidfloor
+| failed_hourofweek
+| failed_geo
+| failed_cat
+| failed_creative
+| failed_user
+| failed_device
+| failed_other.
 
 %%%%%%%%%%%%%%%%%%%%%%
 %%%    API CALLS   %%%
 %%%%%%%%%%%%%%%%%%%%%%
 
-%%
-%%
-start_link() ->
-	gen_server:start_link(?MODULE, [], []).
+
+-spec(increment(Stat :: bidder_stat(), CmpTid :: integer()) -> any()).
+increment(Stat, CmpTid) ->
+	internal_increment(Stat, CmpTid).
 
 
-%%%%%%%%%%%%%%%%%%%%%%
-%%%    CALLBACKS   %%%
-%%%%%%%%%%%%%%%%%%%%%%
+send_stats(CmpTid) ->
+	CmpList = ets:tab2list(CmpTid),
+	AccId = proplists:get_value(<<"acc">>, CmpList),
+	Cmp = proplists:get_value(<<"cid">>, CmpList),
+	[statsderl:increment(<<"cmp.", AccId/binary, ".", Cmp/binary, ".", M/binary>>, proplists:get_value(M, CmpList, 0), 1)
+		|| M <- ?METRICS].
 
-%%
-%% @private
-%% Starts the gen_server loop by sending an {interval} msg to initiate.
-%%
-%% This gen_server checks when a new time slot (ts) has started to collect the stats
-%% 	from the bidders and publish then to RMQ.
-%%
-init([]) ->
-	process_flag(trap_exit, true),
-	erlang:send_after(?INTERVAL, self(), {interval}),
-	{ok, #state{}}.
 
-handle_call(_Request, _From, State) ->
-	{reply, ok, State}.
-
-handle_cast(_Request, State) ->
-	{noreply, State}.
-
-%%
-%% @private
-%%
-handle_info({interval}, State) ->
-	Ts0 = State#state.ts,
-	{Ts1, _T} = get_current_ts(),
-	case Ts1 == Ts0 of
-		true ->
-			ok;
-		false ->
-			%% Async start of process to collect and publish stats
-			Pid = spawn(fun collect_and_publish_stats/0),
-			Pid ! {ts, Ts0}
-	end,
-	erlang:send_after(?INTERVAL, self(), {interval}),
-	{noreply, State#state{ts = Ts1}};
-handle_info({stop}, State) ->
-	{stop, shutdown, State};
-handle_info({'EXIT', _, _}, State) ->
-	{stop, shutdown, State}.
-
-%%
-%% @private
-%% Error in case of exit
-%%
-terminate(_Reason, _State) ->
-	?ERROR("BIDDER: Stats collection module has stopped on node ~p", [node()]).
-
-%% @private
-code_change(_OldVsn, State, _Extra) ->
-	{ok, State}.
+reset_stats(CmpTid) ->
+	InsertList = [{M, 0} || M <- ?METRICS],
+	ets:insert(CmpTid, InsertList).
 
 
 %%%%%%%%%%%%%%%%%%%%%%
 %%%    INTERNAL    %%%
 %%%%%%%%%%%%%%%%%%%%%%
 
-collect_and_publish_stats() ->
-	receive
-		%% Ignore first time slot since no previous data exists
-		{ts, 0} ->
-			ok;
-		%% Start collecting data
-		{ts, Ts0} ->
-			collect_and_publish_stats(Ts0)
-	after
-		100 -> ok
-	end.
+internal_increment(bid_request, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bid_requests">>, 1);
+internal_increment(bid, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids">>, 1);
+internal_increment(imp, CmpTid) ->
+	ets:update_counter(CmpTid, <<"imps">>, 1);
+internal_increment(click, CmpTid) ->
+	ets:update_counter(CmpTid, <<"clicks">>, 1);
+internal_increment(failed_budget, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids.failed.budget">>, 1);
+internal_increment(failed_bidfloor, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids.failed.bidfloor">>, 1);
+internal_increment(failed_hourofweek, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids.failed.hourofweek">>, 1);
+internal_increment(failed_geo, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids.failed.geo">>, 1);
+internal_increment(failed_cat, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids.failed.cat">>, 1);
+internal_increment(failed_creative, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids.failed.creative">>, 1);
+internal_increment(failed_device, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids.failed.device">>, 1);
+internal_increment(failed_other, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids.failed.other">>, 1).
 
-collect_and_publish_stats(Ts0) ->
-	CmpPids = [Pid || {_, _, Pid, _, _} <- ets:tab2list(cmp_list)],
-	StatsList = lists:map(
-		fun(P) ->
-			{ok, Stats} = gen_server:call(P, {get_and_reset_stats}),
-			Stats
-		end
-		, CmpPids),
-	Stats = #{
-		<<"node">> => node(),
-		<<"time_slot">> => Ts0,
-		<<"stats">> => StatsList
-	},
-	StatsJson = jsx:encode(Stats),
-	?INFO("BIDDER_STATS: Bidder stats on node ~p (ts: ~p): ~p", [node(), Ts0, StatsJson]),
-	rmq:publish(cmp_stats, erlang:term_to_binary(Stats)).
-
-get_current_ts() ->
-	{ok, TsLength} = application:get_env(ts_length),
-	{_, Time} = calendar:now_to_universal_time(erlang:timestamp()),
-	TimeSinceMidnight = calendar:time_to_seconds(Time),
-	Ts = trunc(TimeSinceMidnight / TsLength),
-	DayTs = trunc(24 * 60 * 60 / TsLength),
-	{Ts, DayTs}.

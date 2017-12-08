@@ -9,22 +9,17 @@
 
 process_bid(AccId, Cmp, BR, BidId, ImpId, CmpTid, AuctionPid, TimeStamp, DebugBid) ->
 
-	%% Updating CMP counters -----------------
-	ets:update_counter(CmpTid, <<"bid_requests">>, 1),
-	%% ---------------------------------------
+	bidder_stats:increment(bid_request, CmpTid), %% Cmp stat update
 	case tkb_bids_filter:filter_bid(CmpTid, BR) of
 
 		{fail, Reason} ->
-			ReasonBin1 = reason_to_binary(Reason),
+			{ReasonAtom, ReasonBin1} = check_reason(Reason),
 			ReasonBin2 = <<"fail - ", ReasonBin1/binary>>,
+			bidder_stats:increment(ReasonAtom, CmpTid), %% Cmp stat update
 			bidder_data:save_bidder_bid(TimeStamp, BidId, Cmp, ReasonBin2, 0.0),
 			log_bid(BidId, [{<<"bid_cmp_", Cmp/binary>>, ReasonBin2}], DebugBid);
 
 		{pass, Cr} ->
-			%% Updating CMP counters -----------------
-			ets:update_counter(CmpTid, <<"bids">>, 1),
-			%% ---------------------------------------
-
 			{_, Config} = bidder_cmp:dirty_read_cmp(CmpTid, <<"config">>),
 			Adomain = tk_maps:get([<<"adomain">>], Config, <<"">>),
 			Bid = tk_maps:get([<<"bid">>, <<"bid">>], Config, 0),
@@ -35,6 +30,7 @@ process_bid(AccId, Cmp, BR, BidId, ImpId, CmpTid, AuctionPid, TimeStamp, DebugBi
 			case tkb_bidder_bid:calc_bid(BidType, Bid, BidFloor) of
 				no_bid ->
 					bidder_data:save_bidder_bid(TimeStamp, BidId, Cmp, <<"fail - bidfloor">>, 0.0),
+					bidder_stats:increment(failed_bidfloor, CmpTid), %% Cmp stat update
 					log_bid(BidId, [{<<"bid_cmp_", Cmp/binary>>, <<"fail - bidfloor">>}], DebugBid);
 				BidPrice ->
 					RSPmap = #{
@@ -55,6 +51,7 @@ process_bid(AccId, Cmp, BR, BidId, ImpId, CmpTid, AuctionPid, TimeStamp, DebugBi
 						0 ->
 							bidder_data:save_bidder_bid(TimeStamp, BidId, Cmp, Crid, BidPrice)
 					end,
+					bidder_stats:increment(bid, CmpTid), %% Cmp stat update
 					log_bid(BidId, [{<<"bid_cmp_", Cmp/binary>>, RSPmap}], DebugBid),
 					AuctionPid ! {bid, Cmp, BidId, RSPmap}
 			end
@@ -80,6 +77,23 @@ log_bid(BidId, List, true) when is_list(List) ->
 		end
 		, Bid1, List),
 	rmq:publish(bids_debug, term_to_binary(Bid2)).
+
+
+check_reason({[<<"cat">>], include}) ->
+	{failed_cat, <<"cat">>};
+check_reason({[<<"cat">>], exclude}) ->
+	{failed_cat, <<"cat">>};
+check_reason({[<<"budget">>, <<"hourofweek">>], include}) ->
+	{failed_hourofweek, <<"hourofweek">>};
+check_reason({[<<"device">>,<<"type">>], include}) ->
+	{failed_device, <<"device">>};
+check_reason({[<<"country">>], include}) ->
+	{failed_geo, <<"geo">>};
+check_reason(no_matching_creative) ->
+	{failed_creative, <<"creative">>};
+check_reason(Other) ->
+	{failed_other, reason_to_binary(Other)}.
+
 
 reason_to_binary(Reason) when is_binary(Reason) ->
 	Reason;

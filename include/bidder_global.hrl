@@ -23,10 +23,7 @@
 -define(BIDS_SAVE_PCTG, 0.2). %% should be less than 1
 
 
-
 %% DEFAULTS
-
-
 
 
 %% COWBOY SETTINGS
@@ -41,6 +38,7 @@
 %% POOLER SETTINGS (per interface process)
 -define(BIDS_PLUS_POOLER_INIT_COUNT, 100).
 -define(BIDS_PLUS_POOLER_MAX_COUNT, 200).
+
 
 
 -ifdef(debug).

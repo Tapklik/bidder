@@ -64,15 +64,6 @@ init([]) ->
 		type => worker,
 		modules => [bidder_data]
 	},
-	%% TODO Not started
-	BidderStats = #{
-		id => bidder_stats,
-		start => {bidder_stats, start_link, []},
-		restart => permanent,
-		shutdown => 2000,
-		type => worker,
-		modules => [bidder_stats]
-	},
 	VMServer = #{
 		id => vm,
 		start => {vm, start_link, []},

@@ -195,7 +195,17 @@ init([Cmp, CmpConfig, CmpHash]) ->
 		{<<"bid_requests">>, 0},
 		{<<"bids">>, 0},
 		{<<"imps">>, 0},
-		{<<"clicks">>, 0}
+		{<<"clicks">>, 0},
+		{<<"bids.success">>, 0},
+		{<<"bids.failed.budget">>, 0},
+		{<<"bids.failed.bidfloor">>, 0},
+		{<<"bids.failed.hourofweek">>, 0},
+		{<<"bids.failed.geo">>, 0},
+		{<<"bids.failed.cat">>, 0},
+		{<<"bids.failed.creative">>, 0},
+		{<<"bids.failed.user">>, 0},
+		{<<"bids.failed.device">>, 0},
+		{<<"bids.failed.other">>, 0}
 	]),
 	%% Global cmp list that holds all the running campaigns
 	ets:insert(cmp_list, {Cmp, AccId, self(), Tid, 1.0}),
@@ -283,11 +293,9 @@ handle_info({interval}, State) ->
 				[Cmp, node()]),
 			self() ! {stop}
 	end,
-	%% Reset all ETS counters
-	ets:insert(Tid, {<<"bid_requests">>, 0}),
-	ets:insert(Tid, {<<"bids">>, 0}),
-	ets:insert(Tid, {<<"imps">>, 0}),
-	ets:insert(Tid, {<<"clicks">>, 0}),
+	%% Send to statsd and reset all ETS counters
+	bidder_stats:send_stats(Tid),
+	bidder_stats:reset_stats(Tid),
 	erlang:send_after(?INTERVAL, self(), {interval}),
 	{noreply, State};
 
