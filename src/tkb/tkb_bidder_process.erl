@@ -85,6 +85,8 @@ check_reason({[<<"cat">>], exclude}) ->
 	{failed_cat, <<"cat">>};
 check_reason({[<<"budget">>, <<"hourofweek">>], include}) ->
 	{failed_hourofweek, <<"hourofweek">>};
+check_reason({pacing_rate, include}) ->
+	{failed_budget, <<"budget">>};
 check_reason({[<<"device">>,<<"type">>], include}) ->
 	{failed_device, <<"device">>};
 check_reason({[<<"country">>], include}) ->
