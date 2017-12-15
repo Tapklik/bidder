@@ -44,7 +44,7 @@ init([Parent, BidId, BR, TimeStamp, DebugBid]) ->
 		timestamp = TimeStamp,
 		debug = DebugBid
 	},
-	erlang:send_after(50, self(), {auction_timeout}),
+	erlang:send_after(?AUCTION_TIMEOUT, self(), {auction_timeout}),
 	loop(Parent, Debug, State).
 
 loop(Parent, Debug, State) ->
