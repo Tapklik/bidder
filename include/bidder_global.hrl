@@ -3,7 +3,7 @@
 %%%%%%%%%%%%%%%%%%%%%%
 
 %% SYSTEM SETTINGS
--define(AUCTION_TIMEOUT, 3s0).
+-define(AUCTION_TIMEOUT, 30).
 -define(STATS_P, 0.3).
 -define(FILTERING, true).
 -define(NODE, node()).
