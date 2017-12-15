@@ -68,12 +68,6 @@
 ]).
 -define(RMQ_PUBLISHERS, [
 	#publisher{
-		name = stats,
-		exchange = <<"stats">>,
-		logging = false,
-		topic = <<"stats.bidders">>,
-		pool_size = 20},
-	#publisher{
 		name = bids_debug,
 		exchange = <<"bids">>,
 		logging = false,
