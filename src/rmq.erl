@@ -49,8 +49,8 @@ start_publisher(#publisher{name = Name, pool_size = PoolSize} = Publisher) ->
 publish(PublisherName, Msg) ->
 	case try_ets_lookup(rmq_publishers, PublisherName) of
 		not_found ->
-			?ERROR("RMQ: Error in publishing to RMQ server. Publisher pool not found! ~n (Msg: ~p)",
-				[shorten_log_output(Msg)]);
+			?ERROR("RMQ: Error in publishing to RMQ server. Publisher pool ( ~p ) not found! ~n (Msg: ~p)",
+				[PublisherName, shorten_log_output(Msg)]);
 		_ ->
 			Worker = pooler:take_member(PublisherName),
 			case Worker of
