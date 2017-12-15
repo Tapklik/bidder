@@ -272,13 +272,15 @@ handle_info({interval}, State) ->
 		<<"clicks">> => try_ets_lookup_stats(Tid, <<"clicks">>)
 	},
 	Cmp = State#state.cmp,
-	Node = node(),
-	PublishStats = #{
-		<<"cmp">> => Cmp,
-		<<"node">> => Node,
-		<<"stats">> => Stats
-	},
-	rmq:publish(stats, erlang:term_to_binary(PublishStats)),
+	%% TODO either remove or check why fails
+	%%	Node = node(),
+	%%	PublishStats = #{
+	%%		<<"cmp">> => Cmp,
+	%%		<<"node">> => Node,
+	%%		<<"stats">> => Stats
+	%%	},
+	%%	rmq:publish(stats, erlang:term_to_binary(PublishStats)),
+
 	%% check for timeout if didn't receive campaign update in CMP_TIMEOUT or
 	%%	didn't receive pacing rate update in CMP_PACING_RATE_TIMEOUR
 	T1 = State#state.timestamp,
