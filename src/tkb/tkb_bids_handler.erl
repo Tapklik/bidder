@@ -74,7 +74,10 @@ handle_info({auction_rsp, BidId, RSPmap}, State) when BidId == State#state.bid_i
 	%% STAT: Calculate bid response time
 	T2 = erlang:monotonic_time(),
 	Time1 = erlang:convert_time_unit(T2 - State#state.t1, native, milli_seconds),
-	statsderl:timing("rsp.time_bidder", Time1, ?STATS_P),
+	[Node, Host] = binary:split(atom_to_binary(node(), latin1), <<"@">>),
+	Prefix = <<"bids.bidder.", Node/binary, "__", Host/binary, ".">>,
+	statsderl:timing(<<Prefix/binary, "rsp.time.auction">>, Time1, ?STATS_P),
+	statsderl:increment(<<Prefix/binary, "rsp.auction">>, 1, ?STATS_P),
 	{noreply, State};
 handle_info(stop, State) ->
 	{stop, normal, State};
