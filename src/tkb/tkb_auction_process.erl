@@ -78,8 +78,6 @@ loop(Parent, Debug, State) ->
 						bids = Bids2
 					}
 			end,
-			?DEBUG("BID (ID: ~p) -> AUCTION: Received bid of ~p from Cmp ~p. (Total bids: ~p. Current price: ~p)",
-				[BidId, NewPrice, Cmp, CurrentCount + 1, CurrentPrice]),
 			loop(Parent, Debug, NewState);
 		{auction_timeout} ->
 			RSP = State#state.current_bid,
@@ -94,7 +92,6 @@ loop(Parent, Debug, State) ->
 					%% Save bid in temp table waiting for win notification
 					bidder_data:save_bid(TimeStamp, BidId, BR, RSP2)
 			end,
-			?DEBUG("BID (ID: ~p) -> AUCTION: Submitted winning bid: ~p", [BidId, RSP]),
 			Parent ! {auction_rsp, BidId, RSP}
 	end.
 

@@ -43,7 +43,7 @@
 		topic = <<"config.pacing">>,
 		logging = true,
 		func = fun(P) -> bidder_cmp:set_pacing_rate(P) end,
-		pool_size = 50},
+		pool_size = 100},
 	#subscriber{
 		name = config_bert,
 		exchange = <<"config">>,
@@ -55,26 +55,28 @@
 		name = wins,
 		exchange = <<"wins">>,
 		topic = <<"wins.imps">>,
-		logging = true,
+		logging = false,
 		func = fun(P) -> bidder_data:mark_win(P) end,
-		pool_size = 10},
+		pool_size = 100},
 	#subscriber{
 		name = clicks,
 		exchange = <<"wins">>,
 		topic = <<"wins.clicks">>,
-		logging = true,
+		logging = false,
 		func = fun(P) -> bidder_data:mark_click(P) end,
-		pool_size = 4}
+		pool_size = 40}
 ]).
 -define(RMQ_PUBLISHERS, [
 	#publisher{
 		name = stats,
 		exchange = <<"stats">>,
+		logging = true,
 		topic = <<"stats.bidders">>,
 		pool_size = 20},
 	#publisher{
 		name = bids_debug,
 		exchange = <<"bids">>,
+		logging = false,
 		topic = <<"bids.debug">>,
 		pool_size = 30}
 ]).
