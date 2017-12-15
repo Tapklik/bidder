@@ -70,7 +70,7 @@
 	#publisher{
 		name = stats,
 		exchange = <<"stats">>,
-		logging = true,
+		logging = false,
 		topic = <<"stats.bidders">>,
 		pool_size = 20},
 	#publisher{
