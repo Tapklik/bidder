@@ -15,8 +15,8 @@
 		statsderl,
 		bertconf,
 		shotgun,
-		cache
-%		brod
+		cache,
+		brod
 	]},
 	{included_applications, [pooler]},
 	{mod, {bidder_app, []}},
