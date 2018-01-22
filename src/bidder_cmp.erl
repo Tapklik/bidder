@@ -13,6 +13,7 @@
 
 
 -export([get_cmp_stats/1]).
+-export([get_cmp_value/2]).
 -export([get_all_cmps/0, get_and_reset_all_cmps_stats/0]).
 
 -export([set_pacing_rate/1]).
@@ -105,6 +106,14 @@ check_cmp(Cmp) ->
 			{ok, running}
 	end.
 
+get_cmp_value(Cmp, Key) ->
+	case try_ets_lookup(cmp_list, Cmp) of
+		not_found ->
+			{error, not_found};
+		{_, _, Pid, _, _} ->
+			gen_server:call(Pid, {get_cmp_value, Key})
+	end.
+
 get_cmp_stats(Cmp) ->
 	case try_ets_lookup(cmp_list, Cmp) of
 		not_found ->
@@ -172,15 +181,16 @@ save_bert_file(FileBin) ->
 init([Cmp, CmpConfig, CmpHash]) ->
 	process_flag(trap_exit, true),
 	Tid = ets:new(cmp, [public, set]),
-	%% Insert initial counts for cmp stats
 	#{
 		<<"filters">> := Filters,
 		<<"creatives">> := Creatives,
 		<<"status">> := Status,
 		<<"id">> := Cid,
 		<<"config">> := Config,
+		<<"fees">> := Fees,
 		<<"acc">> := AccId
 	} = CmpConfig,
+	%% Insert initial counts for cmp stats
 	ets:insert(Tid, [
 		{<<"filters">>, Filters},
 		{<<"creatives">>, Creatives},
@@ -189,6 +199,7 @@ init([Cmp, CmpConfig, CmpHash]) ->
 		{<<"cid">>, Cid},
 		{<<"config">>, Config},
 		{<<"hash">>, CmpHash},
+		{<<"fees">>, Fees},
 		{<<"pacing_rate">>, 1.0}
 	]),
 	ets:insert(Tid, [
@@ -232,6 +243,16 @@ handle_call({get_stats}, _From, State) ->
 	},
 	{reply, {ok, Resp}, State};
 
+
+handle_call({get_cmp_value, Key}, _From, State) ->
+	CmpTid = State#state.tid,
+	Result = case ets:lookup(CmpTid, Key) of
+				[] -> {error, value_not_found};
+				L ->
+					{<<"fees">>, Fees} = hd(L),
+					{ok, Fees}
+			end,
+	{reply, Result, State};
 
 handle_call({get_cmp_hash}, _From, State) ->
 	Hash = State#state.hash,

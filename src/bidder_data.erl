@@ -90,6 +90,7 @@ mark_win(WinBin) ->
 	Data = Bid#{
 		<<"crid">> => Crid,
 		<<"win_price">> => trunc(WinPrice),
+		<<"spend">> => calc_spend(WinPrice, Cmp),
 		<<"imps">> => 1,
 		<<"clicks">> => 0
  	},
@@ -221,6 +222,18 @@ code_change(_OldVsn, State, _Extra) ->
 %%%%%%%%%%%%%%%%%%%%%%
 %%%    INTERNAL    %%%
 %%%%%%%%%%%%%%%%%%%%%%
+
+calc_spend(WinPrice, Cmp) ->
+	case bidder_cmp:get_cmp_value(Cmp, <<"fees">>) of
+		{ok, Fees} ->
+			VariableFees = tk_maps:get([<<"variable">>], Fees),
+			FixedFees = tk_maps:get([<<"fixed">>], Fees),
+			trunc(WinPrice + (VariableFees / 100 * WinPrice) + FixedFees);
+		_ ->
+			?ERROR("BIDDER_CMP: Error in calculating fees for ~p", [WinPrice]),
+			0
+	end.
+
 
 create_table(Ts, TsDict) ->
 	Tid = ets:new(data_bids_table, [public, set, {write_concurrency, true}]),

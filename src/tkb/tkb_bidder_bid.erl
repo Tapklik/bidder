@@ -18,7 +18,7 @@ calc_bid(<<"exact">>, Bid, BidFloor) ->
 		_ -> no_bid
 	end;
 calc_bid(<<"variance">>, Bid, BidFloor) ->
-	case round_decimal(abs(Bid / 1000000) * (120 - rand:uniform(40)) / 100) of
+	case round_decimal(abs(Bid / 1000000) * (110 - rand:uniform(40)) / 100) of
 		B when B >= BidFloor -> B;
 		_ -> no_bid
 	end.
