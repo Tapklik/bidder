@@ -41,13 +41,13 @@ save_bid(TimeStamp, BidId, BR, RSP) ->
 	{AccId, Cmp, Crid, BidPrice} = check_rsp_output(RSP),
 	%{ok, {TimeStamp, Tid}} = get_current_tid(),
 	Data = #{
-		<<"timestamp">> => TimeStamp,	% time stamp (5 mins)
+		<<"timestamp">> => TimeStamp,    % time stamp (5 mins)
 		<<"bid_id">> => BidId,          % id
-		<<"acc">> => AccId,            	% account id
-		<<"cmp">> => Cmp,            	% campaign id
-		<<"br">> => BR,         		% br
-		<<"rsp">> => RSP,           	% creative id
-		<<"include">> => SaveBid		% include
+		<<"acc">> => AccId,                % account id
+		<<"cmp">> => Cmp,                % campaign id
+		<<"br">> => BR,                % br
+		<<"rsp">> => RSP,            % creative id
+		<<"include">> => SaveBid        % include
 	},
 	cache:put(bids_cache, BidId, Data).
 
@@ -57,15 +57,15 @@ save_bidder_bid(TimeStamp, BidId, Cmp, Crid, BidPrice) ->
 % TODO check if we still need to send every bidder bid to datawarehouse
 save_bidder_bid2(TimeStamp, BidId, Cmp, Crid, BidPrice) ->
 	Data = #{
-		<<"timestamp">> => TimeStamp,	% time stamp (5 mins)
+		<<"timestamp">> => TimeStamp,    % time stamp (5 mins)
 		<<"bid_id">> => BidId,          % id
-		<<"cmp">> => Cmp,            	% campaign id
-		<<"crid">> => Crid,         	% creative id
+		<<"cmp">> => Cmp,                % campaign id
+		<<"crid">> => Crid,            % creative id
 		<<"bid_price">> => BidPrice     % bid price
 	},
 	Value = jsx:encode(Data),
 	Client = c1,
-	Topic  = <<"bidders">>,
+	Topic = <<"bidders">>,
 	PartitionFun = fun(_Topic, PartitionsCount, _Key, _Value) ->
 		{ok, crypto:rand_uniform(0, PartitionsCount)}
 				   end,
@@ -74,43 +74,47 @@ save_bidder_bid2(TimeStamp, BidId, Cmp, Crid, BidPrice) ->
 mark_win(WinBin) ->
 	WinMap = binary_to_term(WinBin),
 	#{
-		<<"timestamp">> := _TimeStamp,    	% time stamp (5 mins)
-		<<"bid_id">> := BidId,          	% id
-		<<"cmp">> := Cmp,                	% campaign id
-		<<"crid">> := Crid,                	% creative id
-		<<"win_price">> := WinPrice    	 	% win price
+		<<"timestamp">> := _TimeStamp,        % time stamp (5 mins)
+		<<"bid_id">> := BidId,            % id
+		<<"cmp">> := Cmp,                    % campaign id
+		<<"crid">> := Crid,                    % creative id
+		<<"win_price">> := WinPrice            % win price
 	} = WinMap,
 	%% Updating CMP counters -----------------
 	case ets:lookup(cmp_list, Cmp) of
 		[] -> ok;
-		[{_, _, _, CmpTid, _} |_] -> ets:update_counter(CmpTid, <<"imps">>, 1)
+		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"imps">>, 1)
 	end,
 	%% ---------------------------------------
-	Bid = cache:get(bids_cache, BidId),
-	Data = Bid#{
-		<<"crid">> => Crid,
-		<<"win_price">> => trunc(WinPrice),
-		<<"spend">> => calc_spend(WinPrice, Cmp),
-		<<"imps">> => 1,
-		<<"clicks">> => 0
- 	},
-	Data2 = jsx:encode(Data),
-	cache:put(wins_cache, BidId, Data),
-	Topic  = <<"wins">>,
-	publish_to_kafka(Topic, Data2).
+	case cache:get(bids_cache, BidId) of
+		undefined ->
+			ok;
+		Bid when is_map(Bid) ->
+			Data = Bid#{
+				<<"crid">> => Crid,
+				<<"win_price">> => trunc(WinPrice),
+				<<"spend">> => calc_spend(WinPrice, Cmp),
+				<<"imps">> => 1,
+				<<"clicks">> => 0
+			},
+			Data2 = jsx:encode(Data),
+			cache:put(wins_cache, BidId, Data),
+			Topic = <<"wins">>,
+			publish_to_kafka(Topic, Data2)
+	end.
 
 mark_click(ClickBin) ->
 	ClickMap = binary_to_term(ClickBin),
 	#{
-		<<"timestamp">> := _TimeStamp,    	% time stamp (5 mins)
-		<<"bid_id">> := BidId,          	% id
-		<<"cmp">> := Cmp,                	% campaign id
-		<<"crid">> := Crid              	% creative id
+		<<"timestamp">> := _TimeStamp,        % time stamp (5 mins)
+		<<"bid_id">> := BidId,            % id
+		<<"cmp">> := Cmp,                    % campaign id
+		<<"crid">> := Crid                % creative id
 	} = ClickMap,
 	%% Updating CMP counters -----------------
 	case ets:lookup(cmp_list, Cmp) of
 		[] -> ok;
-		[{_, _, _, CmpTid, _} |_] -> ets:update_counter(CmpTid, <<"clicks">>, 1)
+		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"clicks">>, 1)
 	end,
 	%% ---------------------------------------
 	case cache:get(wins_cache, BidId) of
@@ -125,7 +129,7 @@ mark_click(ClickBin) ->
 				<<"clicks">> => Clicks + 1
 			},
 			Data2 = jsx:encode(Data),
-			Topic  = <<"wins">>,
+			Topic = <<"wins">>,
 			publish_to_kafka(Topic, Data2)
 	end.
 
@@ -137,7 +141,7 @@ publish_to_kafka(Topic, Load) ->
 				{ok, crypto:rand_uniform(0, PartitionsCount)}
 						   end,
 			%% TODO Watch for spawning a new function here only for Kafka pub
-			spawn(fun()-> brod:produce(Client, Topic, PartitionFun, <<"">>, Load) end),
+			spawn(fun() -> brod:produce(Client, Topic, PartitionFun, <<"">>, Load) end),
 			{ok, published};
 		_ ->
 			{ok, kafka_disabled}
