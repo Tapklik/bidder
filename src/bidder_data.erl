@@ -88,7 +88,7 @@ mark_win(WinBin) ->
 	%% ---------------------------------------
 	case cache:get(bids_cache, BidId) of
 		undefined ->
-			ok;
+			{ok, no_bid_in_cache};
 		Bid when is_map(Bid) ->
 			Data = Bid#{
 				<<"crid">> => Crid,
