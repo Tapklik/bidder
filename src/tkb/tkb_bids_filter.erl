@@ -78,7 +78,11 @@ select_creative(CmpTid, BR, _F1) ->
 		{<<"creatives">>, Creatives} ->
 			MatchingCreatives = lists:foldl(
 				fun(Creative, Acc) ->
-					C1 = tk_maps:get([<<"class">>], Creative),
+					%% TODO change later to combine banner and html5; for now treat as same
+					C1 = case tk_maps:get([<<"class">>], Creative) of
+							 <<"html5">> -> <<"banner">>;
+							 C -> C
+						 end,
 					C2 = tk_maps:get([<<"imp">>, <<"class">>], BR),
 					Imp = tk_maps:get([<<"imp">>], BR),
 					case C1 == C2 of
