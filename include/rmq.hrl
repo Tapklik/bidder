@@ -54,9 +54,16 @@
 	#subscriber{
 		name = wins,
 		exchange = <<"wins">>,
-		topic = <<"wins.imps">>,
+		topic = <<"wins.wins">>,
 		logging = false,
 		func = fun(P) -> bidder_data:mark_win(P) end,
+		pool_size = 100},
+	#subscriber{
+		name = imps,
+		exchange = <<"wins">>,
+		topic = <<"wins.imps">>,
+		logging = false,
+		func = fun(P) -> bidder_data:mark_imp(P) end,
 		pool_size = 100},
 	#subscriber{
 		name = clicks,
