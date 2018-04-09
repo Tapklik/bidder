@@ -11,7 +11,7 @@
 	get_current_tid/0,
 	save_bid/4,
 	save_bidder_bid/5,
-	mark_win/1, mark_click/1, publish_to_kafka/2
+	mark_win/1, mark_imp/1, mark_click/1, publish_to_kafka/2
 ]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	terminate/2, code_change/3]).
@@ -94,11 +94,42 @@ mark_win(WinBin) ->
 				<<"crid">> => Crid,
 				<<"win_price">> => trunc(WinPrice),
 				<<"spend">> => calc_spend(WinPrice, Cmp),
-				<<"imps">> => 1,
+				<<"imps">> => 0,
 				<<"clicks">> => 0
 			},
 			Data2 = jsx:encode(Data),
 			cache:put(wins_cache, BidId, Data),
+			Topic = <<"wins">>,
+			publish_to_kafka(Topic, Data2)
+	end.
+
+
+mark_imp(ImpBin) ->
+	ImpMap = binary_to_term(ImpBin),
+	#{
+		<<"timestamp">> := _TimeStamp,        % time stamp (5 mins)
+		<<"bid_id">> := BidId,            % id
+		<<"cmp">> := Cmp,                    % campaign id
+		<<"crid">> := Crid                % creative id
+	} = ImpMap,
+	%% Updating CMP counters -----------------
+	case ets:lookup(cmp_list, Cmp) of
+		[] -> ok;
+		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"imps">>, 1)
+	end,
+	%% ---------------------------------------
+	case cache:get(wins_cache, BidId) of
+		undefined ->
+			{ok, bid_not_found};
+		Bid ->
+			Imps = tk_maps:get([<<"imps">>], Bid),
+			Data = Bid#{
+				<<"imps">> => Imps + 1,
+				<<"win_price">> => 0,
+				<<"crid">> => Crid,
+				<<"clicks">> => 0
+			},
+			Data2 = jsx:encode(Data),
 			Topic = <<"wins">>,
 			publish_to_kafka(Topic, Data2)
 	end.
