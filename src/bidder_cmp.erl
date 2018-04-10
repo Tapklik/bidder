@@ -110,8 +110,13 @@ get_cmp_value(Cmp, Key) ->
 	case try_ets_lookup(cmp_list, Cmp) of
 		not_found ->
 			{error, not_found};
-		{_, _, Pid, _, _} ->
-			gen_server:call(Pid, {get_cmp_value, Key})
+		{_, _, _, Tid, _} ->
+			case ets:lookup(Tid, Key) of
+				[] -> {error, value_not_found};
+				L ->
+					{<<"fees">>, Fees} = hd(L),
+					{ok, Fees}
+			end
 	end.
 
 get_cmp_stats(Cmp) ->
@@ -247,11 +252,11 @@ handle_call({get_stats}, _From, State) ->
 handle_call({get_cmp_value, Key}, _From, State) ->
 	CmpTid = State#state.tid,
 	Result = case ets:lookup(CmpTid, Key) of
-				[] -> {error, value_not_found};
-				L ->
-					{<<"fees">>, Fees} = hd(L),
-					{ok, Fees}
-			end,
+				 [] -> {error, value_not_found};
+				 L ->
+					 {<<"fees">>, Fees} = hd(L),
+					 {ok, Fees}
+			 end,
 	{reply, Result, State};
 
 handle_call({get_cmp_hash}, _From, State) ->
