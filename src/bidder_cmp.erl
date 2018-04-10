@@ -114,8 +114,8 @@ get_cmp_value(Cmp, Key) ->
 			case ets:lookup(Tid, Key) of
 				[] -> {error, value_not_found};
 				L ->
-					{<<"fees">>, Fees} = hd(L),
-					{ok, Fees}
+					{Key, Value} = hd(L),
+					{ok, Value}
 			end
 	end.
 
