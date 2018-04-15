@@ -21,7 +21,7 @@
 }).
 
 %% RABBITMQ PUBSUB SETTINGS
--define(RMQ_HOST, os:getenv("RMQ_HOST", "104.225.218.109")).
+% Define RMQ_HOST in global.hrl
 -define(RMQ_PORT, 5672).
 -define(RMQ_USER, <<"tapklik">>).
 -define(RMQ_PASSWORD, <<"tapKlik7-rabbitmq">>).

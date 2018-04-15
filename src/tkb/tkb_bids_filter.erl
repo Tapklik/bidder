@@ -1,6 +1,6 @@
 -module(tkb_bids_filter).
 
--include("bidder_global.hrl").
+-include("global.hrl").
 -include("lager.hrl").
 
 
@@ -10,6 +10,8 @@
 	include/3,
 	exclude/3,
 	equal/3]).
+
+-export([get_hourofweek/3]).
 
 -type map_path() :: [binary()] | binary().
 -type filter_action() :: pass | fail.
@@ -135,13 +137,29 @@ filter_internal(FilterFun, FilterConfig, Map) ->
 filter_internal(_, _, _, {fail, R}) -> {fail, R};
 filter_internal([], _, _, Result) -> Result;
 filter_internal([{P1, {Fun, Default}, P2} | T], FilterConfig, Map, _Result) ->
-	case ?MODULE:Fun({P1, FilterConfig}, {P2, Map}, Default) of
+	case filter_internal2(Fun, P1, P2, FilterConfig, Map, Default) of
 		pass ->
 			filter_internal(T, FilterConfig, Map, pass);
 		fail ->
 			filter_internal(T, FilterConfig, Map, {fail, {P1, Fun}})
 	end.
 
+filter_internal2(Fun, Path1, Path2, FilterConfig, Map, Default) ->
+	%% V1 usually comes from campaigns
+	V1 = case Path1 of
+			 {mfa, F1, A1} ->
+				 ?MODULE:F1(A1, FilterConfig, Map);
+			 P1 when is_list(P1) ->
+				 lookup(P1, FilterConfig)
+		 end,
+	%% V2 usually comes from bid request
+	V2 = case Path2 of
+			 {mfa, F2, A2} ->
+				 ?MODULE:F2(A2, FilterConfig, Map);
+			 P2 when is_list(P2) ->
+				 lookup(P2, Map)
+		 end,
+	?MODULE:Fun(V1, V2, Default).
 
 
 %%
@@ -156,12 +174,8 @@ filter_internal([{P1, {Fun, Default}, P2} | T], FilterConfig, Map, _Result) ->
 %%		not defined		defined			pass
 %%		not defined		not	defined		pass
 %%
--spec include({map_path(), map()}, {map_path(), map()}, filter_action()) -> filter_action().
-include({P1, FilterConfig}, {P2, BR}, Default) ->
-	%% V1 comes from campaigns
-	V1 = lookup(P1, FilterConfig),
-	%% V2 comes from bid request
-	V2 = lookup(P2, BR),
+-spec include(any(), any(), filter_action()) -> filter_action().
+include(V1, V2, Default) ->
 	case [{X, Y} || X <- V1, Y <- V2, X == Y] of
 		[] when V1 == [] -> pass;
 		[] when V2 == [] -> Default;
@@ -182,10 +196,8 @@ include({P1, FilterConfig}, {P2, BR}, Default) ->
 %%		not defined		defined			pass
 %%		not defined		not	defined		pass
 %%
--spec exclude({map_path(), map()}, {map_path(), map()}, filter_action()) -> filter_action().
-exclude({P1, FilterConfig}, {P2, BR}, _Default) ->
-	V1 = lookup(P1, FilterConfig),
-	V2 = lookup(P2, BR),
+-spec exclude(any(), any(), filter_action()) -> filter_action().
+exclude(V1, V2, _Default) ->
 	case [{X, Y} || X <- V1, Y <- V2, X == Y] of
 		[] when V1 == [] -> pass;
 		[] when V2 == [] -> pass;
@@ -203,14 +215,11 @@ exclude({P1, FilterConfig}, {P2, BR}, _Default) ->
 %%		=/= 0			=/= 0			pass | fail
 %%		= 0		or 		= 0				Default
 %%
--spec equal({map_path(), map()}, {map_path(), map()}, any()) -> pass | fail.
-equal({P1, FilterConfig}, {P2, BR}, Default) ->
-	%% V1 comes from campaigns
-	V1 = tk_maps:get(P1, FilterConfig, 0),
-	%% V2 comes from bid request
-	V2 = tk_maps:get(P2, BR, 0),
+-spec equal(any(), any(), filter_action() | any()) -> pass | fail.
+equal(V1, V2, Default) ->
+
 	case V1 == V2 of
-		false when (V1 == 0 orelse v2 == 0) -> Default;
+		false when (V1 == undefined orelse v2 == undefined) -> Default;
 		false -> fail;
 		true -> pass
 	end.
@@ -230,6 +239,18 @@ lookup(Path, Map) ->
 	end.
 
 
+get_hourofweek(_Args, FilterConfig, BR) ->
+	HourOfWeekUTC = tk_maps:get([<<"hourofweek">>], BR),
+	Diff = tk_maps:get([<<"timezone_diff">>], FilterConfig),
+	case HourOfWeekUTC + Diff of
+		H when H =< 0 ->
+			[168 + H];
+		H when H > 168 ->
+			[H - 168];
+		H ->
+			[H]
+	end.
+
 %%%%%%%%%%%%%%%%%%%%%%
 %%% CONFIGURATIONS %%%
 %%%%%%%%%%%%%%%%%%%%%%
@@ -246,7 +267,7 @@ filters_1() ->
 		{[<<"adomain">>], {exclude, pass}, [<<"badv">>]},
 		{[<<"device">>,<<"type">>], {include, pass}, [<<"device">>, <<"type">>]},
 		{[<<"user">>, <<"gender">>], {include, pass}, [<<"user">>, <<"gender">>]},
-		{[<<"budget">>, <<"hourofweek">>], {include, fail}, [<<"hourofweek">>]},
+		{[<<"budget">>, <<"hourofweek">>], {include, fail}, {mfa, get_hourofweek, []}},
 		{[<<"cat">>], {exclude, pass}, [<<"bcat">>]},
 		{[<<"cat">>], {include, pass}, [<<"cat">>]},
 		{[<<"country">>], {include, fail}, [<<"geo">>, <<"country">>]}

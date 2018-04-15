@@ -22,6 +22,9 @@
 
 -define(BIDS_SAVE_PCTG, 0.2). %% should be less than 1
 
+-define(RMQ_HOST, ?ENV(rmq_host, "localhost")).
+
+
 
 %% DEFAULTS
 

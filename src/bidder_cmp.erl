@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 
--include("bidder_global.hrl").
+-include("global.hrl").
 -include("lager.hrl").
 -include_lib("../lib/amqp_client/include/amqp_client.hrl").
 

@@ -8,7 +8,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -module(bidder).
 
--include("bidder_global.hrl").
+-include("global.hrl").
 -include("lager.hrl").
 
 
