@@ -2,7 +2,7 @@
 
 -behaviour(supervisor).
 
--include("bidder_global.hrl").
+-include("global.hrl").
 -include("lager.hrl").
 
 
@@ -72,7 +72,16 @@ init([]) ->
 		type => worker,
 		modules => [vm]
 	},
-	Children = [CmpSup, BidderSup, RmqSup, Pooler, VMServer],
+	%% Time server gen_server
+	TimeServer = #{
+		id => time_server,
+		start => {time_server, start_link, []},
+		restart => permanent,
+		shutdown => 2000,
+		type => worker,
+		modules => [time_server]
+	},
+	Children = [CmpSup, BidderSup, RmqSup, Pooler, TimeServer, VMServer],
 	RestartStrategy = {one_for_one, 10, 300},
 	{ok, {RestartStrategy, Children}}.
 

@@ -1,6 +1,6 @@
 -module(tkb_auction_process).
 
--include("bidder_global.hrl").
+-include("global.hrl").
 -include("lager.hrl").
 
 
