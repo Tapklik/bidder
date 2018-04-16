@@ -88,9 +88,11 @@ loop(Parent, Debug, State) ->
 			case RSP of
 				invalid_rsp ->
 					ok;
-				RSP2 ->
+				R ->
 					%% Save bid in temp table waiting for win notification
-					bidder_data:save_bid(TimeStamp, BidId, BR, RSP2)
+					%% bidder_data:save_bid(TimeStamp, BidId, BR, RSP2)
+					BidData = #{<<"br">> => BR, <<"rsp">> => R},
+					publish_to_kafka(<<"bids">>, BidData)
 			end,
 			Parent ! {auction_rsp, BidId, RSP}
 	end.
@@ -113,3 +115,17 @@ system_code_change(State, _Module, _OldVsn, _Extra) ->
 %%%%%%%%%%%%%%%%%%%%%%
 
 
+
+publish_to_kafka(Topic, Load) ->
+	Client = c1,
+	case ?ENV(kafka_enabled) of
+		true ->
+			PartitionFun = fun(_Topic, PartitionsCount, _Key, _Value) ->
+				{ok, crypto:rand_uniform(0, PartitionsCount)}
+						   end,
+			%% TODO Watch for spawning a new function here only for Kafka pub
+			spawn(fun() -> brod:produce(Client, Topic, PartitionFun, <<"">>, Load) end),
+			{ok, published};
+		_ ->
+			{ok, kafka_disabled}
+	end.
