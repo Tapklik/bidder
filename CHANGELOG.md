@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 
+## [0.3.1] - 2018-04-21
+### Added
+- Kintetic: AWS Kinesis client
+
+### Changed
+- Logic to match bids with wins--now this happens through Kinesis on AWS
+
+### Fixed
+- Fixed hour of week filter
+
+### Removed
+- Need for caching bids
+- Kafka
+
+
 ## [0.2.2] - 2018-04-15
 ### Added
 - Add Time server
