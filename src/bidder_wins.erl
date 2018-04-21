@@ -51,8 +51,7 @@ mark_win(WinBin) ->
 			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [AccId, Cmp, BidId]),
 			{ok, no_bid_in_cache};
 		Bid when is_map(Bid) ->
-			?INFO("BIDDER (~p): Received win! (Acc: ~p, Cmp: ~p, Price: $~p, Spend: $~p, BidId: ~p)",
-				[AccId, Cmp, WinPrice, Spend, BidId]),
+			?INFO("BIDDER (~p): Received win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [AccId, Cmp, BidId]),
 			Data = Bid#{
 				<<"crid">> => Crid,
 				<<"win_price">> => WinPrice,
