@@ -55,7 +55,7 @@
 		name = wins,
 		exchange = <<"wins">>,
 		topic = <<"wins.{id}">>,
-		logging = true,
+		logging = false,
 		func = fun(P) -> bidder_wins:mark_win(P) end,
 		pool_size = 100}
 
