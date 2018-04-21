@@ -67,15 +67,14 @@ handle_info({{From, br, BidId, BR, TimeStamp, DebugBid}, Poolname}, State) ->
 handle_info({auction_rsp, BidId, RSPmap}, State) when BidId == State#state.bid_id->
 	From = State#state.from,
 	Poolname = State#state.pool_name,
-	DebugBid = State#state.debug,
-	From ! {self(), rsp, BidId, RSPmap},
+	BidderId = list_to_binary(?ENV(app_id)),
+	From ! {BidderId, rsp, BidId, RSPmap},
 	pooler:return_member(Poolname, self()),
 
 	%% STAT: Calculate bid response time
 	T2 = erlang:monotonic_time(),
 	Time1 = erlang:convert_time_unit(T2 - State#state.t1, native, milli_seconds),
-	[Node, Host] = binary:split(atom_to_binary(node(), latin1), <<"@">>),
-	Prefix = <<"bids.bidder.", Node/binary, "__", Host/binary, ".">>,
+	Prefix = <<"bids.bidder.", BidderId/binary, ".">>,
 	statsderl:timing(<<Prefix/binary, "rsp.time.auction">>, Time1, ?STATS_P),
 	statsderl:increment(<<Prefix/binary, "rsp.auction">>, 1, ?STATS_P),
 	{noreply, State};

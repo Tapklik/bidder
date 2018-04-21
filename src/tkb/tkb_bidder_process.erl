@@ -16,7 +16,6 @@ process_bid(AccId, Cmp, BR, BidId, ImpId, CmpTid, AuctionPid, TimeStamp, DebugBi
 			{ReasonAtom, ReasonBin1} = check_reason(Reason),
 			ReasonBin2 = <<"fail - ", ReasonBin1/binary>>,
 			bidder_stats:increment(ReasonAtom, CmpTid), %% Cmp stat update
-			bidder_data:save_bidder_bid(TimeStamp, BidId, Cmp, ReasonBin2, 0.0),
 			log_bid(BidId, [{<<"bid_cmp_", Cmp/binary>>, ReasonBin2}], DebugBid);
 
 		{pass, Cr} ->
@@ -29,7 +28,6 @@ process_bid(AccId, Cmp, BR, BidId, ImpId, CmpTid, AuctionPid, TimeStamp, DebugBi
 			Test = tk_maps:get([<<"test">>], BR),
 			case tkb_bidder_bid:calc_bid(BidType, Bid, BidFloor) of
 				no_bid ->
-					bidder_data:save_bidder_bid(TimeStamp, BidId, Cmp, <<"fail - bidfloor">>, 0.0),
 					bidder_stats:increment(failed_bidfloor, CmpTid), %% Cmp stat update
 					log_bid(BidId, [{<<"bid_cmp_", Cmp/binary>>, <<"fail - bidfloor">>}], DebugBid);
 				BidPrice ->
@@ -45,12 +43,6 @@ process_bid(AccId, Cmp, BR, BidId, ImpId, CmpTid, AuctionPid, TimeStamp, DebugBi
 							<<"adomain">> => Adomain
 						}
 					},
-					%% 0 means "Live mode", 1 is "Test mode"
-					case Test of
-						1 -> ok;
-						0 ->
-							bidder_data:save_bidder_bid(TimeStamp, BidId, Cmp, Crid, BidPrice)
-					end,
 					bidder_stats:increment(bid, CmpTid), %% Cmp stat update
 					log_bid(BidId, [{<<"bid_cmp_", Cmp/binary>>, RSPmap}], DebugBid),
 					AuctionPid ! {bid, Cmp, BidId, RSPmap}

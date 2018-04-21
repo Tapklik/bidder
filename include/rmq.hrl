@@ -54,24 +54,11 @@
 	#subscriber{
 		name = wins,
 		exchange = <<"wins">>,
-		topic = <<"wins.wins">>,
-		logging = false,
-		func = fun(P) -> bidder_data:mark_win(P) end,
-		pool_size = 100},
-	#subscriber{
-		name = imps,
-		exchange = <<"wins">>,
-		topic = <<"wins.imps">>,
-		logging = false,
-		func = fun(P) -> bidder_data:mark_imp(P) end,
-		pool_size = 100},
-	#subscriber{
-		name = clicks,
-		exchange = <<"wins">>,
-		topic = <<"wins.clicks">>,
-		logging = false,
-		func = fun(P) -> bidder_data:mark_click(P) end,
-		pool_size = 40}
+		topic = <<"wins.{id}">>,
+		logging = true,
+		func = fun(P) -> bidder_wins:mark_win(P) end,
+		pool_size = 100}
+
 ]).
 -define(RMQ_PUBLISHERS, [
 	#publisher{

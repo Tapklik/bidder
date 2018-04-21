@@ -39,14 +39,6 @@ init([]) ->
 		type =>supervisor,
 		modules => [tkb_sup]
 	},
-	RmqSup = #{
-		id => rmq_sup,
-		start => {rmq_sup, start_link, []},
-		restart => permanent,
-		shutdown => infinity,
-		type => supervisor,
-		modules => [rmq_sup]
-	},
 	Pooler = #{
 		id => bidder_pooler_sup,
 		start => {bidder_pooler_sup, start_link, []},
@@ -55,14 +47,13 @@ init([]) ->
 		type =>supervisor,
 		modules => [bidder_pooler_sup]
 	},
-	%% TODO Not started
-	BidderData = #{
-		id => bidder_data,
-		start => {bidder_data, start_link, []},
+	RmqSup = #{
+		id => rmq_sup,
+		start => {rmq_sup, start_link, []},
 		restart => permanent,
-		shutdown => 2000,
-		type => worker,
-		modules => [bidder_data]
+		shutdown => infinity,
+		type => supervisor,
+		modules => [rmq_sup]
 	},
 	VMServer = #{
 		id => vm,
@@ -81,7 +72,7 @@ init([]) ->
 		type => worker,
 		modules => [time_server]
 	},
-	Children = [CmpSup, BidderSup, RmqSup, Pooler, TimeServer, VMServer],
+	Children = [CmpSup, BidderSup, Pooler, TimeServer, VMServer, RmqSup],
 	RestartStrategy = {one_for_one, 10, 300},
 	{ok, {RestartStrategy, Children}}.
 

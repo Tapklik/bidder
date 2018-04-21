@@ -25,7 +25,7 @@
 %%%    API CALLS   %%%
 %%%%%%%%%%%%%%%%%%%%%%
 start_link(Parent, BidId, BR, TimeStamp, DebugBid) ->
-	proc_lib:start_link(?MODULE, init, [[Parent, BidId, BR,TimeStamp, DebugBid]]).
+	proc_lib:start_link(?MODULE, init, [[Parent, BidId, BR, TimeStamp, DebugBid]]).
 
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -82,18 +82,14 @@ loop(Parent, Debug, State) ->
 		{auction_timeout} ->
 			RSP = State#state.current_bid,
 			BR = State#state.br,
-			Bids = State#state.bids,
 			BidId = State#state.bid_id,
 			TimeStamp = State#state.timestamp,
 			case RSP of
 				invalid_rsp ->
 					ok;
 				R ->
-					%% TODO Remove -- changed logic!!
 					%% Save bid in temp table waiting for win notification
-					%% bidder_data:save_bid(TimeStamp, BidId, BR, RSP2)
-					BidData = #{<<"br">> => BR, <<"rsp">> => R},
-					publish_to_stream(<<"bids">>, BidId, BidData)
+					bidder_wins:save_bid(TimeStamp, BidId, BR, R)
 			end,
 			Parent ! {auction_rsp, BidId, RSP}
 	end.
@@ -117,16 +113,3 @@ system_code_change(State, _Module, _OldVsn, _Extra) ->
 
 
 
-publish_to_stream(Topic, BidId, Load0) ->
-	case ?ENV(stream_enabled) of
-		true ->
-			Load = base64:encode(jsx:encode(Load0)),
-			kinetic:put_record([
-				{<<"Data">>, Load},
-				{<<"PartitionKey">>, BidId},
-				{<<"StreamName">>, Topic}
-			]),
-			{ok, published};
-		_ ->
-			{ok, stream_disabled}
-	end.
