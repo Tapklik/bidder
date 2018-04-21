@@ -58,7 +58,7 @@ mark_win(WinBin) ->
 				<<"win_price">> => WinPrice,
 				<<"spend">> => Spend
 			},
-			publish_to_stream(, BidId, Data)
+			publish_to_stream(?BIDS_STREAM_TOPIC, BidId, Data)
 	end,
 	{ok, marked}.
 
