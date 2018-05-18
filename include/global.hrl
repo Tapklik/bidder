@@ -23,7 +23,7 @@
 -define(BIDS_SAVE_PCTG, 0.2). %% should be less than 1
 
 -define(RMQ_HOST, ?ENV(rmq_host, "localhost")).
--define(BIDS_STREAM_TOPIC, ?ENV(bids_stream_topic, <<"Bids">>)).
+-define(BIDS_STREAM_TOPIC, ?ENV(stream_bids_topic, <<"Bids">>)).
 
 
 
