@@ -48,7 +48,7 @@ mark_win(WinBin) ->
 	%% ---------------------------------------
 	case cache:get(bids_cache, BidId) of
 		undefined ->
-			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [AccId, Cmp, BidId]),
+			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
 			{ok, no_bid_in_cache};
 		Bid when is_map(Bid) ->
 			?INFO("BIDDER (~p): Received win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),

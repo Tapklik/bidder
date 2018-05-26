@@ -67,7 +67,7 @@ handle_info({{From, br, BidId, BR, TimeStamp, DebugBid}, Poolname}, State) ->
 handle_info({auction_rsp, BidId, RSPmap}, State) when BidId == State#state.bid_id->
 	From = State#state.from,
 	Poolname = State#state.pool_name,
-	BidderId = list_to_binary(?ENV(app_id)),
+	BidderId = ?ENV(app_id),
 	From ! {BidderId, rsp, BidId, RSPmap},
 	pooler:return_member(Poolname, self()),
 
