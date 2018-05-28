@@ -113,7 +113,7 @@ handle_info({init, #subscriber{exchange = Exchange, topic = Topic0,
 	Channel = State#state.channel,
 	Queue = generate_queue_id(Name),
 	#'queue.declare_ok'{} = amqp_channel:call(Channel, #'queue.declare'{exclusive = false,
-		queue = Queue}),
+		queue = Queue, arguments = [{"x-message-ttl", ?RMQ_X_MESSAGE_TTL}]}),
 	amqp_channel:call(Channel, #'queue.bind'{exchange = Exchange, routing_key = Topic,
 		queue = Queue}),
 	amqp_channel:subscribe(Channel, #'basic.consume'{queue = Queue,
@@ -187,7 +187,7 @@ try_publish(PublisherName, Topic, Msg, Count) ->
 	end.
 
 get_topic(Topic0) ->
-	BidderId = ?ENV(app_id, <<"">>),
+	BidderId = list_to_binary(?ENV(app_id, "")),
 	binary:replace(Topic0, <<"{id}">>, BidderId).
 
 generate_queue_id(Name) ->
