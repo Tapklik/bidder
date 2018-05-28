@@ -70,7 +70,7 @@ handle_info({interval}, State) ->
 			TsToDelete = Ts0 - 300,
 			spawn(
 				fun() ->
-					ets:match_delete(wins_db, {'$1', TsToDelete, '_'})
+					ets:match_delete(bids_cache, {'$1', TsToDelete, '_'})
 				end
 			)
 	end,
