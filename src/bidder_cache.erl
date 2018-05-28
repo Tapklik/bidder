@@ -47,7 +47,8 @@ get(BidId) ->
 
 init([]) ->
 	process_flag(trap_exit, true),
-	ets:new(bids_cache, [public, named_table, {write_concurrency, true}]),
+
+	R = ets:new(bids_cache, [public, named_table, {write_concurrency, true}]), tk_lib:echo1(r, R),
 	%% Init
 	erlang:send_after(?INTERVAL, self(), {interval}),
 	{ok, #state{}}.
