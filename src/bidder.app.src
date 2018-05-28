@@ -15,7 +15,6 @@
 		statsderl,
 		bertconf,
 		shotgun,
-		cache,
 		kinetic
 	]},
 	{included_applications, [pooler]},

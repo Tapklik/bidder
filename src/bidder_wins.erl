@@ -26,7 +26,7 @@ save_bid(TimeStamp, BidId, BR, RSP) ->
 		<<"rsp">> => RSP,            		% creative id
 		<<"include">> => SaveBid        	% include
 	},
-	cache:put(bids_cache, BidId, Data).
+	bidder_cache:put(BidId, TimeStamp, Data).
 
 
 mark_win(WinBin) ->
@@ -46,18 +46,18 @@ mark_win(WinBin) ->
 		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"imps">>, 1)
 	end,
 	%% ---------------------------------------
-	case cache:get(bids_cache, BidId) of
-		undefined ->
-			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
-			{ok, no_bid_in_cache};
-		Bid when is_map(Bid) ->
+	case bidder_cache:get(BidId) of
+		{ok, Bid} when is_map(Bid) ->
 			?INFO("BIDDER (~p): Received win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
 			Data = Bid#{
 				<<"crid">> => Crid,
 				<<"win_price">> => WinPrice,
 				<<"spend">> => Spend
 			},
-			publish_to_stream(?BIDS_STREAM_TOPIC, BidId, Data)
+			publish_to_stream(?BIDS_STREAM_TOPIC, BidId, Data);
+		{error, _} ->
+			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
+			{ok, no_bid_in_cache}
 	end,
 	{ok, marked}.
 

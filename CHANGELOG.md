@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 
 ## [Unreleased]
-
+- Changed cache app with local bidder_cache ets based module
 
 ## [0.3.1] - 2018-04-21
 ### Added
