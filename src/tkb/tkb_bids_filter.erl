@@ -281,8 +281,8 @@ filters_2() ->
 creatives_banner() ->
 	[
 		{[<<"dim">>], {include, fail}, [<<"dim">>]},
-		{[<<"pos">>], {equal, pass}, [<<"pos">>]},
-		{[<<"expdir">>], {equal, pass}, [<<"expdir">>]},
+		%%{[<<"pos">>], {equal, pass}, [<<"pos">>]},
+		%%{[<<"expdir">>], {equal, pass}, [<<"expdir">>]},
 		{[<<"attr">>], {exclude, pass}, [<<"battr">>]},
 		{[<<"type">>], {exclude, pass}, [<<"btype">>]}
 	].
