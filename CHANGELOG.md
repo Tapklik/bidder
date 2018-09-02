@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 - Changed cache app with local bidder_cache ets based module
+- Adding bidder_model and bidder_model_pool to connect to local http model endpoint
+- Removed pacing filtering from filters
+- Added failed_ctr and failed_model_timeout metric to campaigns
+- Added special parser for generating Model BR shape
 
 ## [0.3.1] - 2018-04-21
 ### Added

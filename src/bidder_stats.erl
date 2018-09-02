@@ -19,6 +19,7 @@
 	<<"clicks">>,
 	<<"bids.failed.budget">>,
 	<<"bids.failed.bidfloor">>,
+	<<"bids.failed.ctr">>,
 	<<"bids.failed.hourofweek">>,
 	<<"bids.failed.geo">>,
 	<<"bids.failed.cat">>,
@@ -34,6 +35,8 @@
 | click
 | failed_budget
 | failed_bidfloor
+| failed_ctr
+| failed_model_timeout
 | failed_hourofweek
 | failed_geo
 | failed_cat
@@ -81,6 +84,10 @@ internal_increment(failed_budget, CmpTid) ->
 	ets:update_counter(CmpTid, <<"bids.failed.budget">>, 1);
 internal_increment(failed_bidfloor, CmpTid) ->
 	ets:update_counter(CmpTid, <<"bids.failed.bidfloor">>, 1);
+internal_increment(failed_ctr, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids.failed.ctr">>, 1);
+internal_increment(failed_model_timeout, CmpTid) ->
+	ets:update_counter(CmpTid, <<"bids.failed.model_timeout">>, 1);
 internal_increment(failed_hourofweek, CmpTid) ->
 	ets:update_counter(CmpTid, <<"bids.failed.hourofweek">>, 1);
 internal_increment(failed_geo, CmpTid) ->

@@ -14,7 +14,8 @@
 		sasl,
 		statsderl,
 		bertconf,
-		shotgun,
+		gun,
+		pool,
 		kinetic
 	]},
 	{included_applications, [pooler]},

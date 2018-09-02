@@ -3,7 +3,8 @@
 %%%%%%%%%%%%%%%%%%%%%%
 
 %% SYSTEM SETTINGS
--define(AUCTION_TIMEOUT, 30).
+-define(MODEL_TIMEOUT, 40).
+-define(AUCTION_TIMEOUT, 70).
 -define(STATS_P, 0.3).
 -define(FILTERING, true).
 -define(NODE, node()).
@@ -24,6 +25,7 @@
 
 -define(RMQ_HOST, ?ENV(rmq_host, "localhost")).
 -define(BIDS_STREAM_TOPIC, ?ENV(stream_bids_topic, <<"Bids">>)).
+-define(MODEL_PORT, ?ENV(model_port, 65327)).
 
 
 

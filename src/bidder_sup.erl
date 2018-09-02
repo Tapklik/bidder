@@ -63,6 +63,14 @@ init([]) ->
 		type => worker,
 		modules => [bidder_cache]
 	},
+	BidderModel = #{
+		id => bidder_model,
+		start => {bidder_model, start_link, []},
+		restart => permanent,
+		shutdown => 2000,
+		type => worker,
+		modules => [bidder_model]
+	},
 	VMServer = #{
 		id => vm,
 		start => {vm, start_link, []},
@@ -80,7 +88,7 @@ init([]) ->
 		type => worker,
 		modules => [time_server]
 	},
-	Children = [CmpSup, BidderSup, Pooler, TimeServer, BidderCache, VMServer, RmqSup],
+	Children = [CmpSup, BidderSup, Pooler, TimeServer, BidderCache, BidderModel, VMServer, RmqSup],
 	RestartStrategy = {one_for_one, 10, 300},
 	{ok, {RestartStrategy, Children}}.
 
