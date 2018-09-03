@@ -87,7 +87,7 @@ internal_increment(failed_bidfloor, CmpTid) ->
 	ets:update_counter(CmpTid, <<"bids.failed.bidfloor">>, 1);
 internal_increment(failed_ctr, CmpTid) ->
 	ets:update_counter(CmpTid, <<"bids.failed.ctr">>, 1);
-internal_increment(failed_ctr, CmpTid) ->
+internal_increment(failed_pacing_rate, CmpTid) ->
 	ets:update_counter(CmpTid, <<"bids.failed.pacing_rate">>, 1);
 internal_increment(failed_model_timeout, CmpTid) ->
 	ets:update_counter(CmpTid, <<"bids.failed.model_timeout">>, 1);
