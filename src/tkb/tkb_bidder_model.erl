@@ -32,7 +32,7 @@ calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
 					receive
 						{no_bid, Error} ->
 							{no_bid, Error};
-						{bid, Resp} ->
+						{bid, Resp} -> tk_lib:echo1(ctr, Resp),
 							#{
 								<<"bid_id">> := _BidId,
 								<<"probablity">> := Probablity
