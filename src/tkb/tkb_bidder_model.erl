@@ -34,7 +34,7 @@ calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
 							{no_bid, Error};
 						{bid, Resp} -> tk_lib:echo1(ctr, Resp),
 							#{
-								<<"bid_id">> := _BidId,
+								<<"bid-id">> := _BidId,
 								<<"probablity">> := Probablity
 							} = Resp,
 							case Probablity >= Threshold of
