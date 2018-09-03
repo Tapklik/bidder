@@ -61,11 +61,11 @@ calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
 %%%%%%%%%%%%%%%%%%%%%%
 
 get_price_variance(Bid, Rate) when Rate >= 0.3->
-	Bid;
+	floor_decimal(abs(Bid / 1000000), 2);
 get_price_variance(Bid, Rate) when Rate == 0.2->
-	Bid * 1.2;
+	floor_decimal(abs(Bid * 1.2/ 1000000), 2);
 get_price_variance(Bid, Rate) when Rate == 0.1->
-	Bid * 1.6.
+	floor_decimal(abs(Bid * 1.6/ 1000000), 2) .
 
 
 
