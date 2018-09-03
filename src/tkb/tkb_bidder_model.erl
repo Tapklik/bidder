@@ -26,7 +26,8 @@ calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
 		true ->
 			case try_ets_lookup(models, {Model, Rate2}) of
 				not_found ->
-					?ERROR("BIDDER_MODEL: Error in model << ~p >>. (Error: No value in ETS or ETS not found!)", [Model]);
+					?ERROR("BIDDER_MODEL: Error in model << ~p >>. (Error: No value in ETS or ETS not found!)", [Model]),
+					{error, ctr_prediction};
 				{_, Threshold} -> tk_lib:echo1(model_br, ModelBR),
 					bidder_model:get_prediction_async(ModelBR),
 					receive
