@@ -106,6 +106,8 @@ handle_info({'DOWN', _, process, _, _}, State) ->
 handle_info({stop}, State) ->
 	{stop, shutdown, State};
 handle_info({'EXIT', _, _}, State) ->
+	{stop, shutdown, State};
+handle_info(M, State) -> tk_lib:echo1(other_msg_receiveddddddddddddddddd, {M, State}),
 	{stop, shutdown, State}.
 
 
