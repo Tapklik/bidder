@@ -21,8 +21,8 @@ calc_bid(<<"exact">>, _ModelBR, Bid, BidFloor, _Rate) ->
 		_ -> {no_bid, bidfloor}
 	end;
 calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
-	Rate2 = round_decimal(Rate, 1),
-	case ?ENV(model_enabled) of
+	Rate2 = round_decimal(Rate, 1), tk_lib:echo1(rate, Rate),
+	case ?ENV(model_enabled) andalso Rate2 =/= 0.0 of
 		true ->
 			case try_ets_lookup(models, {Model, Rate2}) of
 				not_found ->
@@ -46,6 +46,8 @@ calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
 					end
 
 			end;
+		false when Rate == 0.0 ->
+			{no_bid, pacing_rate};
 		_ ->
 			case floor_decimal(abs(Bid / 1000000) * (110 - rand:uniform(40)) / 100, 2) of
 				B when B >= BidFloor -> B;

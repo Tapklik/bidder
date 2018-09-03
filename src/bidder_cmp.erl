@@ -215,6 +215,7 @@ init([Cmp, CmpConfig, CmpHash]) ->
 		{<<"bids.failed.budget">>, 0},
 		{<<"bids.failed.bidfloor">>, 0},
 		{<<"bids.failed.ctr">>, 0},
+		{<<"bids.failed.pacing_rate">>, 0},
 		{<<"bids.failed.model_timeout">>, 0},
 		{<<"bids.failed.hourofweek">>, 0},
 		{<<"bids.failed.geo">>, 0},
