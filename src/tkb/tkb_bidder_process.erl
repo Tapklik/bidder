@@ -37,7 +37,10 @@ process_bid(AccId, Cmp, BR, BidId, ImpId, CmpTid, AuctionPid, Timestamp, DebugBi
 				{no_bid, model_timeout} ->
 					bidder_stats:increment(failed_model_timeout, CmpTid), %% Cmp stat update
 					log_bid(BidId, [{<<"bid_cmp_", Cmp/binary>>, <<"fail - model_timeout">>}], DebugBid);
-				BidPrice ->
+				{no_bid, pacing_rate} ->
+					bidder_stats:increment(failed_pacing_rate, CmpTid), %% Cmp stat update
+					log_bid(BidId, [{<<"bid_cmp_", Cmp/binary>>, <<"fail - pacing_rate">>}], DebugBid);
+				BidPrice -> tk_lib:echo1(price, BidPrice),
 					RSPmap = #{
 						<<"price">> => BidPrice,
 						<<"weight">> => 1,
