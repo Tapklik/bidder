@@ -30,18 +30,18 @@ calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
 				{_, Threshold} -> tk_lib:echo1(model_br, ModelBR),
 					bidder_model:get_prediction_async(ModelBR),
 					receive
-						{no_bid, Error} ->
+						{no_bid, Error} -> tk_lib:echo1(ctr, Error),
 							{no_bid, Error};
 						{bid, Resp} -> tk_lib:echo1(ctr, Resp),
 							#{
-								<<"bid-id">> := _BidId,
-								<<"probablity">> := Probablity
+								<<"bid_id">> := _BidId,
+								<<"prediction">> := Probablity
 							} = Resp,
 							case Probablity >= Threshold of
 								true -> get_price_variance(Bid, Rate);
 								_ -> {no_bid, bidfloor}
 							end
-					after ?MODEL_TIMEOUT ->
+					after ?MODEL_TIMEOUT -> tk_lib:echo1(ctr, model_timeout),
 						{no_bid, model_timeout}
 					end
 
