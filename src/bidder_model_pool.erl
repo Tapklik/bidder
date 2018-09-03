@@ -76,7 +76,7 @@ handle_return(State) ->
 	{noreply, State}.
 
 
-handle_info({reset_connection}, State) when State#state.socket == undefined->
+handle_info({reset_connection}, State) ->
 	%% reset connection if it has been down for reasons such as server failures
 	case gun:open("localhost", ?ENV(model_port)) of
 		{ok, _} -> ok;
