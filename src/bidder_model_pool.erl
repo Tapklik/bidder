@@ -65,7 +65,7 @@ handle_take_async({ModelBR, From}, State) when State#state.status == free andals
 		{<<"content-type">>, "application/json"}
 	], Body),
 	{noreply, State#state{stream_ref = StreamRef, from = From}};
-handle_take_async({_, From}, State) ->
+handle_take_async({_, From}, State) -> tk_lib:echo1(state, {From, State}),
 	?WARN("BIDDER_MODEL: Connection (~p) busy or restarting!", [State#state.socket]),
 	From ! {no_bid, ctr_prediction},
 	pool:return_worker(self()),
