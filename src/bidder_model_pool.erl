@@ -91,7 +91,7 @@ handle_info({gun_data, _, StreamRef, _, Data}, State = #state{from = From}) when
 		DataDecoded = jsx:decode(Data, [return_maps]),
 		From ! {bid, DataDecoded}
 	catch
-		_:_ ->
+		_:_ -> tk_lib:echo1(error_is_here, Data),
 			From ! {no_bid, ctr_prediction}
 	end,
 	pool:return_worker(self()),
