@@ -24,7 +24,7 @@
 	dispatch_type => hash,
 	worker_ets => pool1_wets
 }).
--define(CONNECTION_RETRY, 60 * 3 * 1000). % retry connection after 3 mins
+-define(CONNECTION_RETRY, 100). % retry connection after 3 mins
 
 %%%%%%%%%%%%%%%%%%%%%%
 %%%    API CALLS   %%%
