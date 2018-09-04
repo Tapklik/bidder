@@ -26,7 +26,7 @@ process_bid(AccId, Cmp, BR, BidId, ImpId, CmpTid, AuctionPid, Timestamp, DebugBi
 			BidType = tk_maps:get([<<"bid">>, <<"type">>], Config, <<"random">>),
 			BidFloor = tk_maps:get([<<"bidfloor">>], Cr, 0.0),
 			Test = tk_maps:get([<<"test">>], BR),
-			ModelBR = get_model_br(BR, Cr, Config),
+			ModelBR = get_model_br(BR, Cr, {Cmp, Config}), tk_lib:echo1(model_br, ModelBR),
 			case tkb_bidder_model:calc_bid(BidType, ModelBR, Bid, BidFloor, Rate) of
 				{no_bid, bidfloor} ->
 					bidder_stats:increment(failed_bidfloor, CmpTid), %% Cmp stat update
@@ -114,38 +114,47 @@ reason_to_binary(Reason) when is_list(Reason) ->
 	reason_to_binary(hd(Reason)).
 
 
-get_model_br(BR, Cr, CmpConfig) ->
-	tk_lib:echo1(br, BR),
-	tk_lib:echo1(cr, Cr),
-	tk_lib:echo1(cmp, CmpConfig),
+get_model_br(BR, Cr, {Cmp, CmpConfig}) ->
+	[Dimension | _] = tk_maps:get([<<"dim">>], Cr),
+	CatBinList = cat_to_bin(tk_maps:get([<<"cat">>], BR)),
 	#{
-		<<"bid-id">> => <<"15304-12b4-4282-a52b-370601e07848">>,
-		<<"device_make">> => <<"Apple">>,
-		<<"device_model">> => <<"">>,
-		<<"device_os">> => <<"Windows">>,
-		<<"device_type">> => 2,
-		<<"device_ua">> => <<"Chrome">>,
-		<<"city">> => <<"Dubayy">>,
-		<<"country">> => <<"ARE">>,
-		<<"hour_of_week">> => 153,
-		<<"position">> => 0,
-		<<"content_rating">> => <<"DV-G">>,
-		<<"content_language">> => <<"en">>,
-		<<"amp">> => 0,
-		<<"mobile">> => 0,
-		<<"page">> => <<"https://www.stanza.co/@arsenal">>,
-		<<"publisher_type">> => <<"site">>,
-		<<"publisher_country">> => <<"US">>,
-		<<"adomain">> => <<"beefbar.com">>,
-		<<"class">> => <<"banner">>,
-		<<"cmp">> => <<"79174d3d24">>,
-		<<"crid">> => <<"9c554ce8-739e-11e8-a8aa-0265f72072a0">>,
+		<<"bid-id">> => tk_maps:get([<<"id">>], BR),
+		<<"device_make">> => tk_maps:get([<<"device">>, <<"make">>], BR, <<"">>),
+		<<"device_model">> => tk_maps:get([<<"device">>, <<"model">>], BR, <<"">>),
+		<<"device_os">> => tk_maps:get([<<"device">>, <<"os">>], BR, <<"">>),
+		<<"device_type">> => tk_maps:get([<<"device">>, <<"type">>], BR, 5),
+		<<"device_ua">> => tk_maps:get([<<"device">>, <<"ua">>], BR, <<"">>),
+		<<"city">> => tk_maps:get([<<"geo">>, <<"city">>], BR, <<"">>),
+		<<"country">> => tk_maps:get([<<"geo">>, <<"country">>], BR, <<"">>),
+		<<"hour_of_week">> => tk_maps:get([<<"hourofweek">>], BR, 0),
+		<<"position">> => tk_maps:get([<<"imp">>, <<"pos">>], BR, 0),
+		<<"content_rating">> => tk_maps:get([<<"publisher">>, <<"contentrating">>], BR),
+		<<"content_language">> => tk_maps:get([<<"publisher">>, <<"language">>], BR),
+		<<"amp">> => tk_maps:get([<<"publisher">>, <<"amp">>], BR, 0),
+		<<"mobile">> => tk_maps:get([<<"publisher">>, <<"mobile">>], BR, 0),
+		<<"page">> => tk_maps:get([<<"publisher">>, <<"domain">>], BR, <<"">>),
+		<<"publisher_type">> => tk_maps:get([<<"publisher">>, <<"type">>], BR, <<"site">>),
+		<<"publisher_country">> => tk_maps:get([<<"publisher">>, <<"country">>], BR, <<"">>),
+		<<"adomain">> => tk_maps:get([<<"adomain">>], CmpConfig, <<"">>),
+		<<"class">> => tk_maps:get([<<"class">>], Cr, <<"banner">>),
+		<<"cmp">> => Cmp,
+		<<"crid">> => tk_maps:get([<<"crid">>], Cr),
 		<<"click">> => 0,
-		<<"dimension">> => <<"300x250">>,
-		<<"data-segment">> => <<"[(695 => 0.3), (1358 => 1), (1274 => 0.1), (1142 => 0.1), (1760 => 0.1)]">>,
-		<<"viewability">> => 0,
-		<<"session_depth">> => 300,
-		<<"categories">> => <<"[IAB15,IAB15-4,IAB19,IAB19-30,IAB22]">>,
-		<<"click_through_rate">> => 0,
-		<<"video_completion_rate">> => 0.002
+		<<"dimension">> => Dimension,
+		<<"data-segment">> => <<"[]">>,
+		<<"viewability">> => tk_maps:get([<<"imp">>, <<"metric">>, <<"viewability">>], BR, 0),
+		<<"session_depth">> => tk_maps:get([<<"imp">>, <<"metric">>, <<"session_depth">>], BR, 0),
+		<<"categories">> => CatBinList,
+		<<"click_through_rate">> => tk_maps:get([<<"imp">>, <<"metric">>, <<"click_through_rate">>], BR, 0),
+		<<"video_completion_rate">> => tk_maps:get([<<"imp">>, <<"metric">>, <<"video_completion_rate">>], BR, 0)
 	}.
+
+
+cat_to_bin(CatList) ->
+	CB = cat_to_bin(CatList, <<>>),
+	<<"[", CB/binary, "]">>.
+cat_to_bin([], Acc) -> Acc;
+cat_to_bin([C | T], <<>>) ->
+	cat_to_bin(T, <<C/binary>>);
+cat_to_bin([C | T], Acc) ->
+	cat_to_bin(T, <<Acc/binary, ",", C/binary>>).
