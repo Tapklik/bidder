@@ -70,7 +70,7 @@ handle_take_async({ModelBR, From}, State) when State#state.status == free ->
 		{<<"content-type">>, "application/json"}
 	], Body),
 	{noreply, State#state{stream_ref = StreamRef, from = From}};
-handle_take_async({_, From}, State) -> tk_lib:echo1(state, {From, State}),
+handle_take_async({_, From}, State) ->
 	?WARN("BIDDER_MODEL: Connection (~p) busy or restarting!", [State#state.socket]),
 	From ! {no_bid, ctr_prediction},
 	pool:return_worker(self()),
@@ -81,13 +81,6 @@ handle_return(State) ->
 	{noreply, State}.
 
 
-handle_info({reset_connection}, State) ->
-	%% reset connection if it has been down for reasons such as server failures
-	case gun:open("localhost", ?ENV(model_port)) of
-		{ok, _} -> ok;
-		_ -> erlang:send_after(5000, self(), {reset_connection})
-	end,
-	{noreply, State};
 handle_info({gun_response, _, _, _, _, _}, State) ->
 	{noreply, State};
 handle_info({gun_data, _, StreamRef, _, Data}, State = #state{from = From}) when StreamRef == State#state.stream_ref
@@ -96,23 +89,20 @@ handle_info({gun_data, _, StreamRef, _, Data}, State = #state{from = From}) when
 		DataDecoded = jsx:decode(Data, [return_maps]),
 		From ! {bid, DataDecoded}
 	catch
-		_:_ -> tk_lib:echo1(error_is_here, Data),
+		_:_ ->
 			From ! {no_bid, ctr_prediction}
 	end,
 	pool:return_worker(self()),
 	{noreply, State#state{status = free}};
-handle_info({gun_up, Socket, _}, State) -> tk_lib:echo1(connection, new),
+handle_info({gun_up, Socket, _}, State) ->
 	{noreply, State#state{socket = Socket, status = free}};
-handle_info({gun_down, _, _, _, _, _}, State) -> tk_lib:echo1(connection, reset),
-	%erlang:send_after(?CONNECTION_RETRY, self(), {reset_connection}),
+handle_info({gun_down, _, _, _, _, _}, State) ->
 	{noreply, State#state{status = free, socket = undefined}};
-handle_info({'DOWN', _, process, _, _}, State) ->
+handle_info({'DOWN', _, _, _, _}, State) ->
 	{stop, shutdown, State};
 handle_info({stop}, State) ->
 	{stop, shutdown, State};
 handle_info({'EXIT', _, _}, State) ->
-	{stop, shutdown, State};
-handle_info(M, State) -> tk_lib:echo1(other_msg_receiveddddddddddddddddd, {M, State}),
 	{stop, shutdown, State}.
 
 
