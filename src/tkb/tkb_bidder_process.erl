@@ -115,6 +115,9 @@ reason_to_binary(Reason) when is_list(Reason) ->
 
 
 get_model_br(BR, Cr, CmpConfig) ->
+	tk_lib:echo1(br, BR),
+	tk_lib:echo1(cr, Cr),
+	tk_lib:echo1(cmp, CmpConfig),
 	#{
 		<<"bid-id">> => <<"15304-12b4-4282-a52b-370601e07848">>,
 		<<"device_make">> => <<"Apple">>,
