@@ -24,7 +24,7 @@
 	dispatch_type => hash,
 	worker_ets => pool1_wets
 }).
--define(CONNECTION_RETRY, 100). % retry connection after 3 mins
+-define(CONNECTION_RETRY, 20000). % retry connection after 3 mins
 
 %%%%%%%%%%%%%%%%%%%%%%
 %%%    API CALLS   %%%
@@ -58,8 +58,13 @@ handle_take(_Msg, _From, State) ->
 	{reply, ok, State}.
 
 
-handle_take_async({ModelBR, From}, State) when State#state.status == free andalso State#state.socket =/= undefined ->
-	Socket = State#state.socket,
+handle_take_async({ModelBR, From}, State) when State#state.status == free ->
+	Socket = case State#state.socket of
+				 undefined ->
+					 {ok, S} = gun:open("localhost", ?ENV(model_port)),
+					 S;
+				 S -> S
+			 end,
 	Body = jsx:encode(ModelBR),
 	StreamRef = gun:post(Socket, "/transform", [
 		{<<"content-type">>, "application/json"}
@@ -76,7 +81,7 @@ handle_return(State) ->
 	{noreply, State}.
 
 
-handle_info({reset_connection}, State) ->
+handle_info({reset_connection}, State) -> 
 	%% reset connection if it has been down for reasons such as server failures
 	case gun:open("localhost", ?ENV(model_port)) of
 		{ok, _} -> ok;
@@ -86,7 +91,7 @@ handle_info({reset_connection}, State) ->
 handle_info({gun_response, _, _, _, _, _}, State) ->
 	{noreply, State};
 handle_info({gun_data, _, StreamRef, _, Data}, State = #state{from = From}) when StreamRef == State#state.stream_ref
-		andalso State#state.from =/= undefined ->
+	andalso State#state.from =/= undefined ->
 	try
 		DataDecoded = jsx:decode(Data, [return_maps]),
 		From ! {bid, DataDecoded}
