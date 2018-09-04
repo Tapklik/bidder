@@ -81,7 +81,7 @@ handle_return(State) ->
 	{noreply, State}.
 
 
-handle_info({reset_connection}, State) -> 
+handle_info({reset_connection}, State) ->
 	%% reset connection if it has been down for reasons such as server failures
 	case gun:open("localhost", ?ENV(model_port)) of
 		{ok, _} -> ok;
@@ -101,10 +101,10 @@ handle_info({gun_data, _, StreamRef, _, Data}, State = #state{from = From}) when
 	end,
 	pool:return_worker(self()),
 	{noreply, State#state{status = free}};
-handle_info({gun_up, Socket, _}, State) ->
+handle_info({gun_up, Socket, _}, State) -> tk_lib:echo1(connection, new),
 	{noreply, State#state{socket = Socket, status = free}};
 handle_info({gun_down, _, _, _, _, _}, State) -> tk_lib:echo1(connection, reset),
-	erlang:send_after(?CONNECTION_RETRY, self(), {reset_connection}),
+	%erlang:send_after(?CONNECTION_RETRY, self(), {reset_connection}),
 	{noreply, State#state{status = free, socket = undefined}};
 handle_info({'DOWN', _, process, _, _}, State) ->
 	{stop, shutdown, State};
