@@ -98,7 +98,7 @@ handle_info({gun_data, _, StreamRef, _, Data}, State = #state{from = From}) when
 	{noreply, State#state{status = free}};
 handle_info({gun_up, Socket, _}, State) ->
 	{noreply, State#state{socket = Socket, status = free}};
-handle_info({gun_down, _, _, _, _, _}, State) ->
+handle_info({gun_down, _, _, _, _, _}, State) -> tk_lib:echo1(connection, reset),
 	erlang:send_after(?CONNECTION_RETRY, self(), {reset_connection}),
 	{noreply, State#state{status = free, socket = undefined}};
 handle_info({'DOWN', _, process, _, _}, State) ->
