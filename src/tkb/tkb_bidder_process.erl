@@ -26,7 +26,7 @@ process_bid(AccId, Cmp, BR, BidId, ImpId, CmpTid, AuctionPid, Timestamp, DebugBi
 			BidType = tk_maps:get([<<"bid">>, <<"type">>], Config, <<"random">>),
 			BidFloor = tk_maps:get([<<"bidfloor">>], Cr, 0.0),
 			Test = tk_maps:get([<<"test">>], BR),
-			ModelBR = get_model_br(BR, Cr, {Cmp, Config}), tk_lib:echo1(model_br, ModelBR),
+			ModelBR = get_model_br(BR, Cr, {Cmp, Config}),
 			case tkb_bidder_model:calc_bid(BidType, ModelBR, Bid, BidFloor, Rate) of
 				{no_bid, bidfloor} ->
 					bidder_stats:increment(failed_bidfloor, CmpTid), %% Cmp stat update
@@ -40,7 +40,7 @@ process_bid(AccId, Cmp, BR, BidId, ImpId, CmpTid, AuctionPid, Timestamp, DebugBi
 				{no_bid, pacing_rate} ->
 					bidder_stats:increment(failed_pacing_rate, CmpTid), %% Cmp stat update
 					log_bid(BidId, [{<<"bid_cmp_", Cmp/binary>>, <<"fail - pacing_rate">>}], DebugBid);
-				BidPrice -> tk_lib:echo1(price, BidPrice),
+				BidPrice ->
 					RSPmap = #{
 						<<"price">> => BidPrice,
 						<<"weight">> => 1,

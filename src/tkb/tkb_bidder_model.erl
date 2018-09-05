@@ -21,19 +21,19 @@ calc_bid(<<"exact">>, _ModelBR, Bid, BidFloor, _Rate) ->
 		_ -> {no_bid, bidfloor}
 	end;
 calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
-	Rate2 = round_decimal(Rate, 1), tk_lib:echo1(rate, Rate),
+	Rate2 = round_decimal(Rate, 1),
 	case ?ENV(model_enabled) andalso Rate2 =/= 0.0 of
 		true ->
 			case try_ets_lookup(models, {Model, Rate2}) of
 				not_found ->
 					?ERROR("BIDDER_MODEL: Error in model << ~p >>. (Error: No value in ETS or ETS not found!)", [Model]),
 					{no_bid, ctr_prediction};
-				{_, Threshold} -> tk_lib:echo1(model_br, ModelBR),
+				{_, Threshold} ->
 					bidder_model:get_prediction_async(ModelBR),
 					receive
-						{no_bid, Error} -> tk_lib:echo1(ctr, Error),
+						{no_bid, Error} ->
 							{no_bid, Error};
-						{bid, Resp} -> tk_lib:echo1(ctr, Resp),
+						{bid, Resp} ->
 							#{
 								<<"bid_id">> := _BidId,
 								<<"probability">> := Probability
@@ -42,7 +42,7 @@ calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
 								true -> get_price_variance(Bid, Rate2);
 								_ -> {no_bid, bidfloor}
 							end
-					after ?MODEL_TIMEOUT -> tk_lib:echo1(ctr, model_timeout),
+					after ?MODEL_TIMEOUT ->
 						{no_bid, model_timeout}
 					end
 
