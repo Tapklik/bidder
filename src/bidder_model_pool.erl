@@ -19,7 +19,7 @@
 
 -define(POOL, #{
 	mod => bidder_model_pool,
-	num_workers => 30,
+	num_workers => 500,
 	dispatch_ets => pool0_dets,
 	dispatch_type => hash,
 	worker_ets => pool1_wets
