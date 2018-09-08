@@ -46,12 +46,6 @@ handle_info({{From, br, BidId, BR, TimeStamp, DebugBid}, Poolname}, State) ->
 	%% STAT
 	T1 = erlang:monotonic_time(),
 
-	case rand:uniform() < 0.02 of
-		true ->
-			tk_lib:echo1(received, bid_request);
-		false -> ok
-	end,
-
 	{ok, AuctionPid} = tkb_auction_process:start_link(self(), BidId, BR, TimeStamp, DebugBid),
 	L = ets:match_object(cmp_list, '_'),
 	NumCmp = length(L),
