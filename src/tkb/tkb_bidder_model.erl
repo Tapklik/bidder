@@ -37,7 +37,7 @@ calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
 					end,
 					bidder_model:get_prediction_async(ModelBR),
 					receive
-						{no_bid, Error} ->
+						{no_bid, Error} -> tk_lib:echo1(no_bid, Error),
 							{no_bid, Error};
 						{bid, Resp} ->
 							#{
@@ -48,7 +48,7 @@ calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
 								true -> P = get_price_variance(Bid, Rate2), tk_lib:echo1(p, {P, Probability}), P;
 								_ -> {no_bid, bidfloor}
 							end
-					after ?MODEL_TIMEOUT ->
+					after ?MODEL_TIMEOUT -> tk_lib:echo1(no_bid, model_timeout),
 						{no_bid, model_timeout}
 					end
 
