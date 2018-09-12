@@ -53,24 +53,24 @@ start_link(Cmp, CmpConfig, CmpHash) ->
 	gen_server:start_link(?MODULE, [Cmp, CmpConfig, CmpHash], []).
 
 
-load_cmp_config(Config) -> tk_lib:echo1(cmp, Config),
-	#{
-		<<"cmp">> := Cmp,
-		<<"hash">> := Hash,
-		<<"config">> := CmpConfig
-	} = Config,
-	case try_ets_lookup(cmp_list, Cmp) of
-		not_found ->
-			{ok, _} = start_cmp(Cmp, CmpConfig, Hash);
-		{_, _, Pid, _, _} ->
-			case gen_server:call(Pid, {get_cmp_hash}) of
-				{ok, Hash} ->
-					gen_server:call(Pid, {reset_timeout});
-				_ ->
-					stop_cmp(Cmp),
-					{ok, _} = start_cmp(Cmp, CmpConfig, Hash)
-			end
-	end.
+load_cmp_config(Config) -> tk_lib:echo1(cmp, Config), ok.
+%%	#{
+%%		<<"cmp">> := Cmp,
+%%		<<"hash">> := Hash,
+%%		<<"config">> := CmpConfig
+%%	} = Config,
+%%	case try_ets_lookup(cmp_list, Cmp) of
+%%		not_found ->
+%%			{ok, _} = start_cmp(Cmp, CmpConfig, Hash);
+%%		{_, _, Pid, _, _} ->
+%%			case gen_server:call(Pid, {get_cmp_hash}) of
+%%				{ok, Hash} ->
+%%					gen_server:call(Pid, {reset_timeout});
+%%				_ ->
+%%					stop_cmp(Cmp),
+%%					{ok, _} = start_cmp(Cmp, CmpConfig, Hash)
+%%			end
+%%	end.
 
 start_cmp(Cmp, CmpConfig, CmpHash) ->
 	case try_ets_lookup(cmp_list, Cmp) of
