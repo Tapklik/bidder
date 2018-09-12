@@ -1,7 +1,7 @@
 %%-*- mode: erlang -*-
 {application, bidder, [
 	{description, ""},
-	{vsn, "0.4.0"},
+	{vsn, "0.4.1"},
 	{registered, []},
 	{applications, [
 		kernel,
@@ -16,9 +16,11 @@
 		bertconf,
 		gun,
 		pool,
-		kinetic
+		kinetic,
+		pooler,
+		rmq
 	]},
-	{included_applications, [pooler]},
+	{included_applications, []},
 	{mod, {bidder_app, []}},
 	{env, []}
 ]}.

@@ -6,6 +6,7 @@
 -record(subscriber, {
 	name,
 	exchange,
+	type,
 	topic,
 	func,
 	pool_size,
@@ -20,14 +21,6 @@
 	logging
 }).
 
-%% RABBITMQ PUBSUB SETTINGS
-% Define RMQ_HOST in global.hrl
--define(RMQ_PORT, 5672).
--define(RMQ_USER, <<"tapklik">>).
--define(RMQ_PASSWORD, <<"tapKlik7-rabbitmq">>).
--define(RMQ_VHOST, <<"/erl">>).
-
--define(RMQ_X_MESSAGE_TTL, 60000).
 
 
 %% RABBITMQ PUBSUB SUBSCRIBERS AND PUBLISHERS
@@ -35,6 +28,7 @@
 	#subscriber{
 		name = cmp_config,
 		exchange = <<"campaigns">>,
+		type = pubsub,
 		topic = <<"config.general">>,
 		logging = true,
 		func = fun(P) -> bidder_cmp:load_cmp_config(P) end,
@@ -42,6 +36,7 @@
 	#subscriber{
 		name = cmp_pacing,
 		exchange = <<"campaigns">>,
+		type = pubsub,
 		topic = <<"config.pacing">>,
 		logging = true,
 		func = fun(P) -> bidder_cmp:set_pacing_rate(P) end,
@@ -49,6 +44,7 @@
 	#subscriber{
 		name = config_bert,
 		exchange = <<"config">>,
+		type = pubsub,
 		topic = <<"bert">>,
 		logging = true,
 		func = fun(P) -> bidder_cmp:save_bert_file(P) end,
@@ -56,10 +52,27 @@
 	#subscriber{
 		name = wins,
 		exchange = <<"wins">>,
+		type = pubsub,
 		topic = <<"wins.{id}">>,
 		logging = false,
-		func = fun(P) -> bidder_wins:mark_win(P) end,
-		pool_size = 100}
+		func = fun(P) -> bidder_wins:mark_wins(P) end,
+		pool_size = 20},
+	#subscriber{
+		name = imps,
+		exchange = <<"imps">>,
+		type = pubsub,
+		topic = <<"imps.{id}">>,
+		logging = false,
+		func = fun(P) -> bidder_wins:mark_imps(P) end,
+		pool_size = 20},
+	#subscriber{
+		name = clicks,
+		exchange = <<"clicks">>,
+		type = pubsub,
+		topic = <<"clicks.{id}">>,
+		logging = false,
+		func = fun(P) -> bidder_wins:mark_click(P) end,
+		pool_size = 5}
 
 ]).
 -define(RMQ_PUBLISHERS, [

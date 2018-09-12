@@ -39,22 +39,6 @@ init([]) ->
 		type =>supervisor,
 		modules => [tkb_sup]
 	},
-	Pooler = #{
-		id => bidder_pooler_sup,
-		start => {bidder_pooler_sup, start_link, []},
-		restart => permanent,
-		shutdown => infinity,
-		type =>supervisor,
-		modules => [bidder_pooler_sup]
-	},
-	RmqSup = #{
-		id => rmq_sup,
-		start => {rmq_sup, start_link, []},
-		restart => permanent,
-		shutdown => infinity,
-		type => supervisor,
-		modules => [rmq_sup]
-	},
 	BidderCache = #{
 		id => bidder_cache,
 		start => {bidder_cache, start_link, []},
@@ -88,7 +72,7 @@ init([]) ->
 		type => worker,
 		modules => [time_server]
 	},
-	Children = [CmpSup, BidderSup, Pooler, TimeServer, BidderCache, BidderModel, VMServer, RmqSup],
+	Children = [CmpSup, BidderSup, TimeServer, BidderCache, BidderModel, VMServer],
 	RestartStrategy = {one_for_one, 10, 300},
 	{ok, {RestartStrategy, Children}}.
 

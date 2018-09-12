@@ -6,6 +6,19 @@ All notable changes to this project will be documented in this file.
 -
 
 
+## [0.4.1] - 2018-09-12
+### Added
+- Added imps/clicks counters in bidder_stats
+- Added rmq dep
+
+### Changed
+
+### Fixed
+
+### Removed
+- Removed rmq and rmq_sup
+
+
 ## [0.4.0] - 2018-09-05
 ### Added
 - Adding bidder_model and bidder_model_pool to connect to local http model endpoint

@@ -6,7 +6,7 @@
 
 -export([
 	save_bid/4,
-	mark_win/1
+	mark_wins/1, mark_imps/1, mark_click/1
 ]).
 
 
@@ -29,8 +29,8 @@ save_bid(TimeStamp, BidId, BR, RSP) ->
 	bidder_cache:put(BidId, TimeStamp, Data).
 
 
-mark_win(WinBin) ->
-	WinMap = binary_to_term(WinBin),
+mark_wins([]) -> {ok, marked};
+mark_wins([WinMap | T]) ->
 	#{
 		<<"timestamp">> := _TimeStamp,        	% time stamp (5 mins)
 		<<"bid_id">> := BidId,            		% id
@@ -43,7 +43,7 @@ mark_win(WinBin) ->
 	%% Updating CMP counters -----------------
 	case ets:lookup(cmp_list, Cmp) of
 		[] -> ok;
-		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"imps">>, 1)
+		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"wins">>, 1)
 	end,
 	%% ---------------------------------------
 	case bidder_cache:get(BidId) of
@@ -59,7 +59,31 @@ mark_win(WinBin) ->
 			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
 			{ok, no_bid_in_cache}
 	end,
-	{ok, marked}.
+	mark_wins(T).
+
+
+mark_imps([]) -> {ok, marked};
+mark_imps([ImpMap | T]) ->
+	#{
+		<<"cmp">> := Cmp                    	% campaign id
+	} = ImpMap,
+	%% Updating CMP counters -----------------
+	case ets:lookup(cmp_list, Cmp) of
+		[] -> ok;
+		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"imps">>, 1)
+	end,
+	mark_imps(T).
+
+
+mark_click(ClickMap) ->
+	#{
+		<<"cmp">> := Cmp                    	% campaign id
+	} = ClickMap,
+	%% Updating CMP counters -----------------
+	case ets:lookup(cmp_list, Cmp) of
+		[] -> ok;
+		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"clicks">>, 1)
+	end.
 
 
 %%%%%%%%%%%%%%%%%%%%%%

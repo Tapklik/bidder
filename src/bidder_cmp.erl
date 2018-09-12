@@ -53,12 +53,12 @@ start_link(Cmp, CmpConfig, CmpHash) ->
 	gen_server:start_link(?MODULE, [Cmp, CmpConfig, CmpHash], []).
 
 
-load_cmp_config(ConfigJson) ->
+load_cmp_config(Config) ->
 	#{
 		<<"cmp">> := Cmp,
 		<<"hash">> := Hash,
 		<<"config">> := CmpConfig
-	} = jsx:decode(ConfigJson, [return_maps]),
+	} = Config,
 	case try_ets_lookup(cmp_list, Cmp) of
 		not_found ->
 			{ok, _} = start_cmp(Cmp, CmpConfig, Hash);
@@ -147,8 +147,7 @@ get_and_reset_all_cmps_stats() ->
 		<<"stats">> => Stats
 	}.
 
-set_pacing_rate(PacingJson) ->
-	Pacing = jsx:decode(PacingJson, [return_maps]),
+set_pacing_rate(Pacing) ->
 	#{
 		<<"cmp">> := Cmp,
 		<<"pacing_rate">> := Rate
@@ -161,7 +160,7 @@ set_pacing_rate(PacingJson) ->
 	end.
 
 save_bert_file(FileBin) ->
-	[{Filename1, _Content} | _] = binary_to_term(FileBin),
+	[{Filename1, _Content} | _] = FileBin,
 	Filename2 = atom_to_list(Filename1),
 	case file:write_file(?DATA_PATH ++ Filename2 ++ ".bert", FileBin) of
 		ok ->
@@ -308,7 +307,7 @@ handle_info({interval}, State) ->
 	%%		<<"node">> => Node,
 	%%		<<"stats">> => Stats
 	%%	},
-	%%	rmq:publish(stats, erlang:term_to_binary(PublishStats)),
+	%%	rmq:publish(stats, PublishStats),
 
 	%% check for timeout if didn't receive campaign update in CMP_TIMEOUT or
 	%%	didn't receive pacing rate update in CMP_PACING_RATE_TIMEOUR
