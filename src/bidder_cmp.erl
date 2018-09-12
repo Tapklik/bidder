@@ -70,8 +70,7 @@ load_cmp_config(Config) -> tk_lib:echo1(cmp, Config),
 					stop_cmp(Cmp),
 					{ok, _} = start_cmp(Cmp, CmpConfig, Hash)
 			end
-	end,
-	{ok, loaded}.
+	end.
 
 start_cmp(Cmp, CmpConfig, CmpHash) ->
 	case try_ets_lookup(cmp_list, Cmp) of
