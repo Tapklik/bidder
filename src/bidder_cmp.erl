@@ -53,7 +53,7 @@ start_link(Cmp, CmpConfig, CmpHash) ->
 	gen_server:start_link(?MODULE, [Cmp, CmpConfig, CmpHash], []).
 
 
-load_cmp_config(Config) ->
+load_cmp_config(Config) -> tk_lib:echo1(cmp, Config),
 	#{
 		<<"cmp">> := Cmp,
 		<<"hash">> := Hash,
