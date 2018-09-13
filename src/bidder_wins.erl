@@ -83,7 +83,8 @@ mark_click(ClickMap) ->
 	case ets:lookup(cmp_list, Cmp) of
 		[] -> ok;
 		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"clicks">>, 1)
-	end.
+	end,
+	{ok, marked}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%
