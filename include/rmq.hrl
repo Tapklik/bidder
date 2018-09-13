@@ -30,7 +30,7 @@
 		exchange = <<"campaigns">>,
 		type = pubsub,
 		topic = <<"config.general">>,
-		logging = true,
+		logging = false,
 		func = fun(P) -> bidder_cmp:load_cmp_config(P) end,
 		pool_size = 50},
 	#subscriber{
@@ -38,7 +38,7 @@
 		exchange = <<"campaigns">>,
 		type = pubsub,
 		topic = <<"config.pacing">>,
-		logging = true,
+		logging = false,
 		func = fun(P) -> bidder_cmp:set_pacing_rate(P) end,
 		pool_size = 100},
 	#subscriber{

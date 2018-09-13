@@ -183,8 +183,9 @@ save_bert_file(FileBin) ->
 %%
 %% 	PS: this is a blocking init process because we need process started before updating Cmp
 %%
-init([Cmp, CmpConfig, CmpHash]) ->
+init([Cmp, CmpConfigProp, CmpHash]) ->
 	process_flag(trap_exit, true),
+	CmpConfig = maps:from_list(CmpConfigProp),
 	Tid = ets:new(cmp, [public, set]),
 	#{
 		<<"filters">> := Filters,
