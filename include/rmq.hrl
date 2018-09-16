@@ -1,3 +1,4 @@
+-include("global.hrl").
 
 %%%%%%%%%%%%%%%%%%%%%%
 %%%    GLOBAL	   %%%
@@ -53,7 +54,7 @@
 		name = wins,
 		exchange = <<"wins">>,
 		type = pubsub,
-		topic = <<"wins.{id}">>,
+		topic = [<<"wins">>, ?ENV(app_id, <<"*">>)],
 		logging = false,
 		func = fun(P) -> bidder_wins:mark_wins(P) end,
 		pool_size = 20},
@@ -61,7 +62,7 @@
 		name = imps,
 		exchange = <<"imps">>,
 		type = pubsub,
-		topic = <<"imps.{id}">>,
+		topic = [<<"imps">>, ?ENV(app_id, <<"*">>)],
 		logging = false,
 		func = fun(P) -> bidder_wins:mark_imps(P) end,
 		pool_size = 20},
@@ -69,7 +70,7 @@
 		name = clicks,
 		exchange = <<"clicks">>,
 		type = pubsub,
-		topic = <<"clicks.{id}">>,
+		topic = [<<"clicks">>, ?ENV(app_id, <<"*">>)],
 		logging = false,
 		func = fun(P) -> bidder_wins:mark_click(P) end,
 		pool_size = 5}
