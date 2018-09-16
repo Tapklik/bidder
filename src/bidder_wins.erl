@@ -30,7 +30,7 @@ save_bid(TimeStamp, BidId, BR, RSP) ->
 
 
 mark_wins([]) -> {ok, marked};
-mark_wins([WinMap | T]) ->
+mark_wins([WinMap | T]) -> tk_lib:echo1(data,WinMap),
 	#{
 		<<"timestamp">> := _TimeStamp,        	% time stamp (5 mins)
 		<<"bid_id">> := BidId,            		% id
@@ -53,7 +53,7 @@ mark_wins([WinMap | T]) ->
 				<<"crid">> => Crid,
 				<<"win_price">> => WinPrice,
 				<<"spend">> => Spend
-			}, tk_lib:echo1(data,Data),
+			},
 			publish_to_stream(?BIDS_STREAM_TOPIC, BidId, Data);
 		{error, _} ->
 			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
