@@ -40,25 +40,25 @@ mark_wins([WinMap | T]) -> tk_lib:echo1(data,WinMap),
 		<<"win_price">> := WinPrice ,           % win price
 		<<"spend">> := Spend            		% spend
 	} = WinMap,
-	%% Updating CMP counters -----------------
-	case ets:lookup(cmp_list, Cmp) of
-		[] -> ok;
-		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"wins">>, 1)
-	end,
-	%% ---------------------------------------
-	case bidder_cache:get(BidId) of
-		{ok, Bid} when is_map(Bid) ->
-			?INFO("BIDDER (~p): Received win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
-			Data = Bid#{
-				<<"crid">> => Crid,
-				<<"win_price">> => WinPrice,
-				<<"spend">> => Spend
-			},
-			publish_to_stream(?BIDS_STREAM_TOPIC, BidId, Data);
-		{error, _} ->
-			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
-			{ok, no_bid_in_cache}
-	end,
+%%	%% Updating CMP counters -----------------
+%%	case ets:lookup(cmp_list, Cmp) of
+%%		[] -> ok;
+%%		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"wins">>, 1)
+%%	end,
+%%	%% ---------------------------------------
+%%	case bidder_cache:get(BidId) of
+%%		{ok, Bid} when is_map(Bid) ->
+%%			?INFO("BIDDER (~p): Received win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
+%%			Data = Bid#{
+%%				<<"crid">> => Crid,
+%%				<<"win_price">> => WinPrice,
+%%				<<"spend">> => Spend
+%%			},
+%%			publish_to_stream(?BIDS_STREAM_TOPIC, BidId, Data);
+%%		{error, _} ->
+%%			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
+%%			{ok, no_bid_in_cache}
+%%	end,
 	mark_wins(T).
 
 
