@@ -4,7 +4,6 @@
 
 -include("global.hrl").
 -include("lager.hrl").
--include("rmq.hrl").
 
 -export([start/0, start/2, stop/1]).
 

@@ -3,7 +3,6 @@
 -behaviour(gen_server).
 
 -include("global.hrl").
--include("rmq.hrl").
 -include("lager.hrl").
 
 

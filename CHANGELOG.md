@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 -
 
 
+## [0.4.2] - 2018-09-16
+### Added
+
+### Changed
+
+### Fixed
+- Fixed wins logging
+
+### Removed
+- Removed rmq.hrl and added all configs for RMQ in global
+
+
 ## [0.4.1] - 2018-09-12
 ### Added
 - Added imps/clicks counters in bidder_stats
