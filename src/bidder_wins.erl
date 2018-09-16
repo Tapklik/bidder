@@ -53,7 +53,7 @@ mark_wins([WinMap | T]) ->
 				<<"crid">> => Crid,
 				<<"win_price">> => WinPrice,
 				<<"spend">> => Spend
-			},
+			}, tk_lib:echo1(data,Data),
 			publish_to_stream(?BIDS_STREAM_TOPIC, BidId, Data);
 		{error, _} ->
 			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
