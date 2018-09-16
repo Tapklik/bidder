@@ -30,7 +30,7 @@ save_bid(TimeStamp, BidId, BR, RSP) ->
 
 
 mark_wins([]) ->  tk_lib:echo1(marking_some_wins, no_wins), {ok, marked};
-mark_wins([WinMap | T]) ->  k_lib:echo1(marking_some_wins, hellyeahh),
+mark_wins([WinMap | T]) ->  tk_lib:echo1(marking_some_wins, hellyeahh),
 	#{
 		<<"timestamp">> := _TimeStamp,        	% time stamp (5 mins)
 		<<"bid_id">> := BidId,            		% id
