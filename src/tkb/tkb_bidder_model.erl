@@ -39,8 +39,13 @@ calc_bid(<<"variance">> = Model, ModelBR, Bid, BidFloor, Rate) ->
 								<<"probability">> := Probability
 							} = Resp,
 							case Probability >= Threshold of
-								true -> P = get_price_variance(Bid, Rate2), tk_lib:echo1(p, {P, Probability}), P;
-								_ -> tk_lib:echo1(p, {no_bid, Probability}), {no_bid, bidfloor}
+								true ->
+									P = get_price_variance(Bid, Rate2),
+									%tk_lib:echo1(p, {P, Probability}),
+									P;
+								_ ->
+									%tk_lib:echo1(p, {no_bid, Probability}),
+									{no_bid, bidfloor}
 							end
 					after ?MODEL_TIMEOUT ->
 						{no_bid, model_timeout}
