@@ -54,7 +54,7 @@
 		exchange = <<"wins">>,
 		type = pubsub,
 		topic = <<"wins.{id}">>,
-		logging = false,
+		logging = true,
 		func = fun(P) -> bidder_wins:mark_wins(P) end,
 		pool_size = 20},
 	#subscriber{
@@ -62,7 +62,7 @@
 		exchange = <<"imps">>,
 		type = pubsub,
 		topic = <<"imps.{id}">>,
-		logging = false,
+		logging = true,
 		func = fun(P) -> bidder_wins:mark_imps(P) end,
 		pool_size = 20},
 	#subscriber{
@@ -70,7 +70,7 @@
 		exchange = <<"clicks">>,
 		type = pubsub,
 		topic = <<"clicks.{id}">>,
-		logging = false,
+		logging = true,
 		func = fun(P) -> bidder_wins:mark_click(P) end,
 		pool_size = 5}
 
