@@ -29,8 +29,8 @@ save_bid(TimeStamp, BidId, BR, RSP) ->
 	bidder_cache:put(BidId, TimeStamp, Data).
 
 
-mark_wins([]) ->  tk_lib:echo1(marking_some_wins, no_wins), {ok, marked};
-mark_wins([WinMap | T]) ->  tk_lib:echo1(marking_some_wins, hellyeahh),
+mark_wins([]) -> {ok, marked};
+mark_wins([WinMap | T]) ->
 	#{
 		<<"timestamp">> := _TimeStamp,        	% time stamp (5 mins)
 		<<"bid_id">> := BidId,            		% id
@@ -98,11 +98,11 @@ publish_to_stream(Topic, BidId, Load0) ->
 			case ?ENV(stream_enabled) of
 				true ->
 					Load = base64:encode(jsx:encode(Load0)),
-					X = kinetic:put_record([
+					kinetic:put_record([
 						{<<"Data">>, Load},
 						{<<"PartitionKey">>, BidId},
 						{<<"StreamName">>, Topic}
-					]), tk_lib:echo1(x, X);
+					]);
 				_ ->
 					ok
 			end
