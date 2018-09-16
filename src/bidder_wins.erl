@@ -30,7 +30,7 @@ save_bid(TimeStamp, BidId, BR, RSP) ->
 
 
 mark_wins([]) -> {ok, marked};
-mark_wins([WinMap | T]) -> tk_lib:echo1(data,WinMap),
+mark_wins([WinMap | T]) ->
 	#{
 		<<"timestamp">> := _TimeStamp,        	% time stamp (5 mins)
 		<<"bid_id">> := BidId,            		% id
@@ -40,12 +40,12 @@ mark_wins([WinMap | T]) -> tk_lib:echo1(data,WinMap),
 		<<"win_price">> := WinPrice ,           % win price
 		<<"spend">> := Spend            		% spend
 	} = WinMap,
-%%	%% Updating CMP counters -----------------
-%%	case ets:lookup(cmp_list, Cmp) of
-%%		[] -> ok;
-%%		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"wins">>, 1)
-%%	end,
-%%	%% ---------------------------------------
+	%% Updating CMP counters -----------------
+	case ets:lookup(cmp_list, Cmp) of
+		[] -> ok;
+		[{_, _, _, CmpTid, _} | _] -> ets:update_counter(CmpTid, <<"wins">>, 1)
+	end,
+	%% ---------------------------------------
 	case bidder_cache:get(BidId) of
 		{ok, Bid} when is_map(Bid) ->
 			?INFO("BIDDER (~p): Received win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),

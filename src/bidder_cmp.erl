@@ -211,6 +211,7 @@ init([Cmp, CmpConfigProp, CmpHash]) ->
 	ets:insert(Tid, [
 		{<<"bid_requests">>, 0},
 		{<<"bids">>, 0},
+		{<<"wins">>, 0},
 		{<<"imps">>, 0},
 		{<<"clicks">>, 0},
 		{<<"bids.failed.budget">>, 0},
