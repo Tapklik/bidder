@@ -98,11 +98,11 @@ publish_to_stream(Topic, BidId, Load0) ->
 			case ?ENV(stream_enabled) of
 				true ->
 					Load = base64:encode(jsx:encode(Load0)),
-					kinetic:put_record([
+					X = kinetic:put_record([
 						{<<"Data">>, Load},
 						{<<"PartitionKey">>, BidId},
 						{<<"StreamName">>, Topic}
-					]);
+					]), tk_lib:echo1(x, X);
 				_ ->
 					ok
 			end
