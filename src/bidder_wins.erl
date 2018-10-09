@@ -30,7 +30,12 @@ save_bid(TimeStamp, BidId, BR, RSP) ->
 
 
 mark_wins([]) -> {ok, marked};
-mark_wins([WinMap | T]) ->
+mark_wins([WinMap | T] = L) when is_list(L) ->
+	mark_wins2(WinMap),
+	mark_wins(T);
+mark_wins(WinMap) -> mark_wins2(WinMap).
+
+mark_wins2(WinMap) ->
 	#{
 		<<"timestamp">> := _TimeStamp,        	% time stamp (5 mins)
 		<<"bid_id">> := BidId,            		% id
@@ -58,8 +63,7 @@ mark_wins([WinMap | T]) ->
 		{error, _} ->
 			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
 			{ok, no_bid_in_cache}
-	end,
-	mark_wins(T).
+	end.
 
 
 mark_imps([]) -> {ok, marked};
