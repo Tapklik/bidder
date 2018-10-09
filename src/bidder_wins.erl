@@ -59,7 +59,8 @@ mark_wins2(WinMap) ->
 				<<"win_price">> => WinPrice,
 				<<"spend">> => Spend
 			},
-			publish_to_stream(?BIDS_STREAM_TOPIC, BidId, Data);
+			publish_to_stream(?BIDS_STREAM_TOPIC, BidId, Data),
+			{ok, marked};
 		{error, _} ->
 			?ERROR("BIDDER (~p): No matching bid found for win! (Acc: ~p, Cmp: ~p, BidId: ~p)", [?ENV(app_id), AccId, Cmp, BidId]),
 			{ok, no_bid_in_cache}
