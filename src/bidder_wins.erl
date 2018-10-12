@@ -26,7 +26,7 @@ save_bid(TimeStamp, BidId, BR, RSP) ->
 		<<"rsp">> => RSP,            		% creative id
 		<<"include">> => SaveBid        	% include
 	},
-	cache:put(BidId, TimeStamp, Data).
+	cache:put(bids_cache, BidId, Data).
 
 
 mark_wins([]) -> {ok, marked};
