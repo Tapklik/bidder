@@ -39,14 +39,6 @@ init([]) ->
 		type =>supervisor,
 		modules => [tkb_sup]
 	},
-	BidderCache = #{
-		id => bidder_cache,
-		start => {bidder_cache, start_link, []},
-		restart => permanent,
-		shutdown => 2000,
-		type => worker,
-		modules => [bidder_cache]
-	},
 	BidderModel = #{
 		id => bidder_model,
 		start => {bidder_model, start_link, []},
@@ -72,7 +64,7 @@ init([]) ->
 		type => worker,
 		modules => [time_server]
 	},
-	Children = [CmpSup, BidderSup, TimeServer, BidderCache, BidderModel, VMServer],
+	Children = [CmpSup, BidderSup, TimeServer, BidderModel, VMServer],
 	RestartStrategy = {one_for_one, 10, 300},
 	{ok, {RestartStrategy, Children}}.
 

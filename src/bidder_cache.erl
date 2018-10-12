@@ -66,7 +66,7 @@ handle_info({interval}, State) ->
 		undefined -> ok;
 		Ts0 when Ts0 == Ts1 -> ok;
 		Ts0 ->
-			TsToDelete = Ts0 - 300,
+			TsToDelete = Ts0 - 600,
 			spawn(
 				fun() ->
 					ets:match_delete(bids_cache, {'$1', TsToDelete, '_'})

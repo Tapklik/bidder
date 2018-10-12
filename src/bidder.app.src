@@ -18,6 +18,7 @@
 		pool,
 		kinetic,
 		pooler,
+		cache,
 		rmq
 	]},
 	{included_applications, []},
