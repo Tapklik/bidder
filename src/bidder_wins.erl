@@ -62,7 +62,7 @@ mark_wins2(WinMap) ->
 				<<"win_price">> => WinPrice,
 				<<"spend">> => Spend
 			},
-			publish_to_stream(?BIDS_STREAM_TOPIC, BidId, Data),
+			Publish = publish_to_stream(?BIDS_STREAM_TOPIC, BidId, Data), tk_lib:echo1(publish, Publish),
 			{ok, marked}
 	end.
 
